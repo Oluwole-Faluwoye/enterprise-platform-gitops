@@ -1,21 +1,24 @@
+# Template only
+# To be enabled during Stage G Application Onboarding
+
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 
 metadata:
-  name: root-app
+  name: auth-service
   namespace: argocd
 
 spec:
   project: default
 
   source:
-    repoURL: git@github.com:Oluwole-Faluwoye/enterprise-platform-gitops.git
+    repoURL: git@github.com:Oluwole-Faluwoye/enterprise-microservices.git
     targetRevision: main
-    path: applications
+    path: services/auth-service/k8s
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: auth
 
   syncPolicy:
     automated:

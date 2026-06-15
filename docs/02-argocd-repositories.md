@@ -4,27 +4,29 @@
 
 ArgoCD continuously monitors Git repositories and reconciles Kubernetes resources to match the desired state stored in Git.
 
-For this platform, the GitOps repository is treated as the source of truth for all Kubernetes deployments.
+For this platform, the GitOps repository serves as the source of truth for all Kubernetes deployments.
 
 Repository:
 
 enterprise-platform-gitops
 
-ArgoCD must be able to independently access this repository.
+ArgoCD must independently authenticate to this repository.
 
-It is important to understand that Jenkins repository access does not automatically grant repository access to ArgoCD.
+Repository access granted to Jenkins does not automatically grant repository access to ArgoCD.
 
-These are separate systems with separate authentication requirements.
+These systems operate independently and require separate authentication mechanisms.
 
 ---
 
 # Repository Access Model
 
-The platform uses SSH-based authentication.
+The platform uses SSH-based repository authentication.
 
 Architecture:
 
 GitHub Repository
+↓
+SSH Deploy Key
 ↓
 ArgoCD Repository Secret
 ↓
@@ -32,41 +34,43 @@ ArgoCD Repo Server
 ↓
 Kubernetes Cluster
 
-ArgoCD periodically pulls repository contents and compares them with the current cluster state.
+ArgoCD periodically retrieves repository contents and compares them against current cluster state.
 
-Any differences are automatically reconciled.
+Any detected drift is automatically reconciled.
 
 ---
 
 # Why SSH Authentication?
 
-Several repository authentication methods exist:
+Several authentication methods exist:
 
 * HTTPS with Personal Access Tokens
 * SSH Deploy Keys
 * GitHub App Authentication
 
-For this project, SSH authentication was selected because it:
+SSH authentication was selected because it:
 
-* Mirrors many enterprise GitOps implementations
+* Mirrors enterprise GitOps implementations
 * Avoids Personal Access Token management
-* Provides strong cryptographic authentication
-* Allows repository access to be restricted to specific keys
+* Provides cryptographic authentication
+* Supports repository-scoped permissions
 * Demonstrates secure machine-to-machine communication
 
 ---
 
 # Public Repository vs Private Repository
 
-The GitOps repository may remain public for portfolio and demonstration purposes.
+The repository may remain public for portfolio visibility.
 
-However, the platform is designed as though the repository were private.
+However, the platform is intentionally designed as though the repository were private.
 
-This allows the same architecture to be used later in production environments without major redesign.
+This ensures:
 
-The repository authentication workflow remains in place even when the repository is publicly accessible.
+* Production-ready architecture
+* Enterprise-aligned security practices
+* Easier future migration to private repositories
 
-This demonstrates enterprise-ready design principles.
+The same authentication workflow remains in place regardless of repository visibility.
 
 ---
 
@@ -74,45 +78,99 @@ This demonstrates enterprise-ready design principles.
 
 Private keys must never be committed to source control.
 
-Instead:
+For this platform:
 
-* Jenkins stores the SSH private key securely
-* The pipeline retrieves the credential at runtime
-* Kubernetes secrets are generated dynamically
+* The ArgoCD private key is stored in AWS Secrets Manager
+* Jenkins retrieves the secret at runtime
+* A repository secret is generated dynamically
 * ArgoCD consumes the generated secret
+
+Architecture:
+
+AWS Secrets Manager
+↓
+Jenkins Pipeline
+↓
+Repository Secret Creation
+↓
+ArgoCD Repo Server
 
 Benefits:
 
 * No secret exposure in Git
-* Easier credential rotation
-* Cleaner audit trail
-* Reduced risk of accidental disclosure
+* Centralized secret management
+* Easier key rotation
+* Improved auditability
+* Reduced operational risk
 
 ---
 
 # Repository Secret Architecture
 
-ArgoCD repository credentials are represented as Kubernetes Secrets.
+ArgoCD repositories are registered using Kubernetes Secrets.
 
-The secret contains:
+Secret Name:
 
-* Repository URL
-* Repository type
-* SSH private key
+enterprise-platform-gitops
 
-ArgoCD automatically discovers repository secrets using the label:
+Namespace:
+
+argocd
+
+Label:
 
 argocd.argoproj.io/secret-type: repository
 
-Once detected, the repository becomes available to the ArgoCD Repo Server.
+Template File:
+
+platform-services/argocd-repository-secret.yaml
+
+Template:
+
+apiVersion: v1
+kind: Secret
+
+metadata:
+name: enterprise-platform-gitops
+namespace: argocd
+
+labels:
+argocd.argoproj.io/secret-type: repository
+
+type: Opaque
+
+stringData:
+type: git
+
+url: [git@github.com](mailto:git@github.com):Oluwole-Faluwoye/enterprise-platform-gitops.git
+
+sshPrivateKey: REPLACE_AT_RUNTIME
+
+---
+
+# Runtime Repository Registration
+
+During pipeline execution:
+
+1. Jenkins retrieves the SSH private key from AWS Secrets Manager.
+2. Jenkins injects the private key into the repository secret template.
+3. Jenkins creates the repository secret.
+4. ArgoCD discovers the repository automatically.
+5. ArgoCD begins synchronization.
+
+This design prevents private credentials from being stored in Git.
 
 ---
 
 # Repository Authentication Flow
 
-GitHub
+GitHub Repository
 ↓
-SSH Key Authentication
+SSH Deploy Key
+↓
+AWS Secrets Manager
+↓
+Jenkins Pipeline
 ↓
 ArgoCD Repository Secret
 ↓
@@ -128,51 +186,65 @@ This separation of responsibilities is a core GitOps principle.
 
 # Security Considerations
 
-The following practices are recommended:
+Recommended practices:
 
-* Use dedicated deploy keys
+* Use dedicated Deploy Keys
 * Use read-only repository permissions
-* Avoid sharing Jenkins SSH keys with ArgoCD
+* Separate Jenkins and ArgoCD credentials
+* Store secrets outside source control
 * Rotate keys periodically
-* Store credentials outside source control
 * Audit repository access regularly
+* Apply least-privilege IAM permissions
 
 ---
 
-# Future Enhancements
+# Current Enterprise Enhancements
 
-A mature enterprise implementation would typically replace SSH deploy keys with one of the following:
+Implemented:
+
+* Private Repository Authentication Design
+* SSH Deploy Key Authentication
+* AWS Secrets Manager Integration
+* Runtime Secret Injection
+* Automated Repository Registration
+* ArgoCD Bootstrap Automation
+
+Future Enhancements:
 
 * GitHub App Authentication
-* AWS Secrets Manager
 * External Secrets Operator
-* Vault Integration
-
-These approaches provide centralized secret management and automated credential rotation.
-
-For learning and portfolio purposes, SSH deploy keys provide an excellent balance between simplicity and enterprise relevance.
+* HashiCorp Vault
+* Secret Rotation Automation
+* Multi-Cluster ArgoCD
+* AWS IRSA Integration
 
 ---
 
 # Verification Commands
 
-Verify ArgoCD applications:
+Verify repository secret:
+
+kubectl get secret enterprise-platform-gitops -n argocd
+
+Verify repository registration:
+
+kubectl get secrets 
+-n argocd 
+-l argocd.argoproj.io/secret-type=repository
+
+Verify applications:
 
 kubectl get applications -n argocd
 
-Verify application details:
+Verify root application:
 
 kubectl describe application root-app -n argocd
 
-Verify repository connectivity:
-
-argocd repo list
-
-Verify synchronization state:
+Verify synchronization:
 
 argocd app get root-app
 
-Expected result:
+Expected Result:
 
 NAME       SYNC STATUS   HEALTH STATUS
 root-app   Synced        Healthy

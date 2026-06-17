@@ -1,0 +1,17 @@
+# This is the file Jenkins update
+
+image:
+  repository: 761018849945.dkr.ecr.us-east-1.amazonaws.com/auth-service
+  tag: "1"
+
+replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 8080
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80

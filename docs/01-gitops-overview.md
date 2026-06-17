@@ -292,3 +292,11 @@ In this platform:
 * Git defines desired state
 
 This separation of responsibilities creates a scalable, auditable, and enterprise-aligned deployment architecture.
+
+## Helm Chart Ownership
+
+Helm charts are stored in the GitOps repository and managed by the platform team.
+
+Application repositories contain source code and container build logic only.
+
+Deployment configuration is maintained separately to provide centralized governance and deployment consistency.

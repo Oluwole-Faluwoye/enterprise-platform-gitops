@@ -1,9 +1,9 @@
 replicaCount: 2
 
 image:
-  repository: 761018849945.dkr.ecr.us-east-1.amazonaws.com/auth-service
+  repository: ""
   pullPolicy: Always
-  tag: "v1"
+  tag: ""
 
 imagePullSecrets: []
 

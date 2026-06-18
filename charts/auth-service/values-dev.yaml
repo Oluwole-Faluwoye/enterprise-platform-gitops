@@ -2,7 +2,7 @@
 
 image:
   repository: 761018849945.dkr.ecr.us-east-1.amazonaws.com/auth-service
-  tag: 10
+  tag: 11
 
 replicaCount: 2
 

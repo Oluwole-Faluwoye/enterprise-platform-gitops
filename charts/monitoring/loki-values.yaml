@@ -1,0 +1,9 @@
+loki:
+
+  persistence:
+
+    enabled: true
+
+    storageClassName: gp3
+
+    size: 10Gi

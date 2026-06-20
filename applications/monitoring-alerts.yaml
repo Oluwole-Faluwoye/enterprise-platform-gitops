@@ -2,11 +2,11 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 
 metadata:
-  name: auth-service
+  name: monitoring-alerts
   namespace: argocd
 
   annotations:
-    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-wave: "3"
 
 spec:
 
@@ -18,18 +18,13 @@ spec:
 
     targetRevision: main
 
-    path: charts/auth-service
-
-    helm:
-
-      valueFiles:
-        - values-dev.yaml
+    path: manifests/monitoring
 
   destination:
 
     server: https://kubernetes.default.svc
 
-    namespace: auth
+    namespace: monitoring
 
   syncPolicy:
 
@@ -38,6 +33,3 @@ spec:
       prune: true
 
       selfHeal: true
-
-    syncOptions:
-      - CreateNamespace=true

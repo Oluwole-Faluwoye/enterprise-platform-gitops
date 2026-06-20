@@ -1,0 +1,76 @@
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: platform-alert-rules
+  namespace: monitoring
+
+spec:
+
+  groups:
+
+    - name: platform.rules
+
+      rules:
+
+        - alert: HighCPUUsage
+
+          expr: |
+            100 - (avg by(instance)
+            (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+
+          for: 5m
+
+          labels:
+            severity: warning
+
+          annotations:
+            summary: High CPU Usage
+            description: CPU usage is above 80%
+
+        - alert: PodCrashLooping
+
+          expr: |
+            increase(kube_pod_container_status_restarts_total[10m]) > 3
+
+          for: 5m
+
+          labels:
+            severity: critical
+
+          annotations:
+            summary: Pod Restarting Frequently
+            description: Pod is crash looping
+
+        - alert: NodeNotReady
+
+          expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+
+          for: 5m
+
+          labels:
+            severity: critical
+
+          annotations:
+            summary: Node Not Ready
+            description: Kubernetes node is unavailable
+
+        - alert: HighMemoryUsage
+
+          expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 15
+
+          for: 
+
+        - alert: AuthServiceDown
+
+          expr: up{job="auth-service"} == 0
+
+          for: 2m
+
+          labels:
+            severity: critical
+
+          annotations:
+            summary: Auth Service Down
+            description: Auth Service is unreachable

@@ -183,7 +183,7 @@ argocd-gitops-key.pub
 
 Navigate:
 
-Repository
+Gitops Repository
 
 ↓
 
@@ -197,23 +197,23 @@ Deploy Keys
 
 Add Deploy Key
 
+Title : argocd-gitops
+
 Display Public Key:
 
 ```bash
 cat argocd-gitops-key.pub
+
 ```
 
 Paste into GitHub.
 
-Permission:
+"DO NOT" Allow write access
 
-Read Only
+Because this is majorly for Argocd and it only needs to read the gitops repository and doesn't need to write in the repo.   
 
-Reason:
+( It is the other github ssh that needs write access cos it will be commiting and updating repos)
 
-ArgoCD only needs repository read access.
-
-This follows the Principle of Least Privilege.
 
 ---
 
@@ -251,13 +251,7 @@ Benefits:
 
 The private key is stored in AWS Secrets Manager.
 
-Secret Name:
-
-```text
-argocd/gitops/private-key
-```
-
-Store the private key:
+Store the private key with the following commands:
 
 ```bash
 aws secretsmanager create-secret \

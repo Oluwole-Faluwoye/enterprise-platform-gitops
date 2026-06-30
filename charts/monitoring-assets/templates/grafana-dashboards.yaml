@@ -1,0 +1,27 @@
+{{- $files := .Files.Glob "grafana/dashboards/**/*.json" }}
+
+{{- range $path, $_ := $files }}
+---
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: grafana-dashboard-{{ base $path | trimSuffix ".json" | lower | replace "_" "-" }}
+
+  namespace: {{ $.Values.namespace }}
+
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: dashboard
+    app.kubernetes.io/part-of: enterprise-platform
+    app.kubernetes.io/managed-by: Helm
+
+  annotations:
+    grafana_folder: {{ dir $path | base }}
+
+data:
+  {{ base $path }}: |
+{{ $.Files.Get $path | indent 4 }}
+
+{{- end }}

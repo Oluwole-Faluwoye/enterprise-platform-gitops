@@ -4,8 +4,6 @@ providers:
 
   - name: Enterprise Platform
 
-    orgId: 1
-
     folder: ""
 
     type: file
@@ -13,10 +11,6 @@ providers:
     disableDeletion: false
 
     editable: false
-
-    updateIntervalSeconds: 30
-
-    allowUiUpdates: false
 
     options:
 

@@ -1,0 +1,19 @@
+apiVersion: v1
+
+kind: ConfigMap
+
+metadata:
+
+  name: grafana-dashboard-provider
+
+  namespace: monitoring
+
+  labels:
+
+    grafana_dashboard_provider: "1"
+
+data:
+
+  provider.yaml: |
+
+{{ .Files.Get "grafana/providers/providers.yaml" | indent 4 }}

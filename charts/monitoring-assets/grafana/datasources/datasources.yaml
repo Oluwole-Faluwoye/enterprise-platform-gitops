@@ -1,0 +1,34 @@
+apiVersion: 1
+
+deleteDatasources: []
+
+datasources:
+
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+
+    access: proxy
+
+    url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
+
+    isDefault: true
+
+    editable: false
+
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+
+  - name: Loki
+    uid: loki
+    type: loki
+
+    access: proxy
+
+    url: http://loki.monitoring.svc.cluster.local:3100
+
+    editable: false
+
+    jsonData:
+      maxLines: 1000

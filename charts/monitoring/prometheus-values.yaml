@@ -1,14 +1,50 @@
 grafana:
+  enabled: true
 
   adminPassword: admin123
 
+  defaultDashboardsEnabled: false
+
   persistence:
-
     enabled: true
-
     storageClassName: gp3
+    size: 10Gi
 
-    size: 5Gi
+  service:
+    type: ClusterIP
+
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+      folder: /var/lib/grafana/dashboards
+
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      labelValue: "1"
+
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+
+      providers:
+        - name: Enterprise Platform
+          orgId: 1
+          folder: ""
+          type: file
+          disableDeletion: false
+          editable: false
+          allowUiUpdates: false
+          updateIntervalSeconds: 30
+
+          options:
+            path: /var/lib/grafana/dashboards
+
+  plugins:
+    - grafana-piechart-panel
 
 prometheus:
 

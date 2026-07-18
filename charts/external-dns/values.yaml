@@ -1,11 +1,9 @@
 provider: aws
 
 aws:
-
   region: us-east-1
 
 domainFilters:
-
   - dreammyles.online
 
 policy: sync
@@ -15,17 +13,12 @@ registry: txt
 txtOwnerId: enterprise-platform
 
 serviceAccount:
-
   create: true
-
-  annotations: {}
-
+  annotations:
     eks.amazonaws.com/role-arn: ${EXTERNAL_DNS_ROLE_ARN}
 
 sources:
-
   - ingress
-
   - service
 
 interval: 1m

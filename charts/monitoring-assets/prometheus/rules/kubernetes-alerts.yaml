@@ -1,0 +1,65 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: kubernetes-alerts
+  namespace: monitoring
+
+  labels:
+    release: prometheus-stack
+
+spec:
+
+  groups:
+
+    - name: kubernetes.alerts
+
+      rules:
+
+        - alert: PodPending
+
+          expr: cluster:pods:pending > 0
+
+          for: 5m
+
+          labels:
+            severity: warning
+
+          annotations:
+            summary: Pending Pods detected
+
+        - alert: NodeNotReady
+
+          expr: cluster:nodes:ready < 2
+
+          for: 2m
+
+          labels:
+            severity: critical
+
+          annotations:
+            summary: Kubernetes node unavailable
+
+        - alert: DeploymentUnavailable
+
+          expr: kube_deployment_status_replicas_unavailable > 0
+
+          for: 5m
+
+          labels:
+            severity: critical
+
+          annotations:
+            summary: Deployment has unavailable replicas
+
+        - alert: PodRestartingFrequently
+
+          expr: increase(kube_pod_container_status_restarts_total[10m]) > 3
+
+          for: 5m
+
+          labels:
+            severity: warning
+
+          annotations:
+            summary: Container restarting repeatedly

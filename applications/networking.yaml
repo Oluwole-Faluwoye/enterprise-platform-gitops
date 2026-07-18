@@ -2,11 +2,14 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 
 metadata:
-  name: monitoring-alerts
+
+  name: networking
+
   namespace: argocd
 
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+
+    argocd.argoproj.io/sync-wave: "7"
 
 spec:
 
@@ -18,13 +21,13 @@ spec:
 
     targetRevision: main
 
-    path: manifests/monitoring
+    path: charts/networking
 
   destination:
 
     server: https://kubernetes.default.svc
 
-    namespace: monitoring
+    namespace: default
 
   syncPolicy:
 

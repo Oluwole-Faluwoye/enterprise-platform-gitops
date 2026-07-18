@@ -1,0 +1,15 @@
+{{ define "slack.title" }}
+
+{{ .CommonLabels.alertname }}
+
+{{ end }}
+
+{{ define "slack.text" }}
+
+Severity:
+
+{{ .CommonLabels.severity }}
+
+{{ .CommonAnnotations.summary }}
+
+{{ end }}

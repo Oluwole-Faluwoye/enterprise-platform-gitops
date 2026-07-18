@@ -1,4 +1,18 @@
+# =========================================================
+# GLOBAL
+# =========================================================
+
+global:
+
+  project: enterprise-platform
+
+  environment: dev
+
 replicaCount: 2
+
+# =========================================================
+# IMAGE
+# =========================================================
 
 image:
   repository: ""
@@ -6,6 +20,40 @@ image:
   tag: ""
 
 imagePullSecrets: []
+
+# =========================================================
+# APPLICATION
+# =========================================================
+
+application:
+
+  port: 8080
+
+  profile: dev
+
+# =========================================================
+# APPLICATION SECRETS
+# =========================================================
+
+secrets:
+
+  authService:
+
+    kubernetesSecret: auth-service-secret
+
+env:
+
+  - name: JWT_SECRET
+    secretKey: jwt-secret
+
+  - name: SPRING_DATASOURCE_USERNAME
+    secretKey: database-username
+
+  - name: SPRING_DATASOURCE_PASSWORD
+    secretKey: database-password
+
+  - name: SPRING_DATASOURCE_URL
+    secretKey: database-url
 
 nameOverride: ""
 fullnameOverride: ""
@@ -44,14 +92,18 @@ resources:
     cpu: "500m"
     memory: "512Mi"
 
+health:
+
+  path: /actuator/health
+
 livenessProbe:
   httpGet:
-    path: /health
+    path: /actuator/health/liveness
     port: http
 
 readinessProbe:
   httpGet:
-    path: /health
+    path: /actuator/health/readiness
     port: http
 
 autoscaling:

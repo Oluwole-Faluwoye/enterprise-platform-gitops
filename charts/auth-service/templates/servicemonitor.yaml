@@ -11,7 +11,9 @@ spec:
 
     matchLabels:
 
-      app: auth-service
+      app.kubernetes.io/name: {{ include "auth-service.name" . }}
+
+      app.kubernetes.io/instance: {{ .Release.Name }}
 
   endpoints:
 

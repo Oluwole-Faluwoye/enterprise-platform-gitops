@@ -1,0 +1,49 @@
+# =========================================================
+# GLOBAL PLATFORM SETTINGS
+# =========================================================
+
+global:
+
+  project: enterprise-platform
+
+  environment: dev
+
+  awsRegion: us-east-1
+
+# =========================================================
+# EXTERNAL SECRETS OPERATOR
+# =========================================================
+
+serviceAccount:
+
+  name: external-secrets
+
+secretStore:
+
+  name: aws-secretsmanager
+
+refreshInterval: 1h
+
+# =========================================================
+# SECRET DEFINITIONS
+# =========================================================
+
+secrets:
+
+  grafana:
+
+    awsSecret: grafana/admin
+
+    targetSecret: grafana-secret
+
+  alertmanager:
+
+    awsSecret: alertmanager
+
+    targetSecret: alertmanager-secret
+
+  authService:
+
+    awsSecret: auth-service
+
+    targetSecret: auth-service-secret

@@ -1,0 +1,53 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: application-alerts
+  namespace: monitoring
+
+  labels:
+    release: prometheus-stack
+
+spec:
+
+  groups:
+
+    - name: application.alerts
+
+      rules:
+
+        - alert: HighHTTPErrorRate
+
+          expr: app:error_rate:5m > 5
+
+          for: 5m
+
+          labels:
+            severity: warning
+
+          annotations:
+            summary: HTTP error rate increasing
+
+        - alert: HighLatency
+
+          expr: app:latency:p95 > 1
+
+          for: 5m
+
+          labels:
+            severity: warning
+
+          annotations:
+            summary: API latency above one second
+
+        - alert: ApplicationUnavailable
+
+          expr: up{job="auth-service"} == 0
+
+          for: 2m
+
+          labels:
+            severity: critical
+
+          annotations:
+            summary: Auth Service unavailable

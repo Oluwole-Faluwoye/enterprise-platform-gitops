@@ -1,0 +1,139 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: enterprise-recording-rules
+  namespace: monitoring
+
+  labels:
+    release: prometheus-stack
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: recording-rules
+    app.kubernetes.io/part-of: enterprise-platform
+
+spec:
+
+  groups:
+
+    ###########################################
+    # Infrastructure
+    ###########################################
+
+    - name: infrastructure.rules
+
+      interval: 30s
+
+      rules:
+
+        - record: node:cpu_utilisation:avg5m
+          expr: |
+            100 -
+            (
+              avg by(instance)
+              (
+                rate(node_cpu_seconds_total{mode="idle"}[5m])
+              ) * 100
+            )
+
+        - record: node:memory_utilisation:percent
+          expr: |
+            (
+              1 -
+              (
+                node_memory_MemAvailable_bytes
+                /
+                node_memory_MemTotal_bytes
+              )
+            ) * 100
+
+        - record: node:filesystem_utilisation:percent
+          expr: |
+            (
+              (
+                node_filesystem_size_bytes
+                -
+                node_filesystem_avail_bytes
+              )
+              /
+              node_filesystem_size_bytes
+            ) * 100
+
+    ###########################################
+    # Kubernetes
+    ###########################################
+
+    - name: kubernetes.rules
+
+      interval: 30s
+
+      rules:
+
+        - record: cluster:pods:running
+          expr: |
+            count(
+              kube_pod_status_phase{
+                phase="Running"
+              }
+            )
+
+        - record: cluster:pods:pending
+          expr: |
+            count(
+              kube_pod_status_phase{
+                phase="Pending"
+              }
+            )
+
+        - record: cluster:nodes:ready
+          expr: |
+            sum(
+              kube_node_status_condition{
+                condition="Ready",
+                status="true"
+              }
+            )
+
+        - record: cluster:deployments:available
+          expr: |
+            sum(
+              kube_deployment_status_replicas_available
+            )
+
+    ###########################################
+    # Application
+    ###########################################
+
+    - name: application.rules
+
+      interval: 30s
+
+      rules:
+
+        - record: app:http_requests:rate5m
+          expr: |
+            sum(
+              rate(
+                http_server_requests_seconds_count[5m]
+              )
+            )
+
+        - record: app:error_rate:5m
+          expr: |
+            sum(
+              rate(
+                http_server_requests_seconds_count{
+                  status=~"5.."
+                }[5m]
+              )
+            )
+
+        - record: app:latency:p95
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum(
+                rate(
+                  http_server_requests_seconds_bucket[5m]
+                )
+              ) by (le)
+            )

@@ -1,0 +1,77 @@
+# =========================================================
+# GLOBAL
+# =========================================================
+
+global:
+
+  namespace: default
+
+  domain: dev.dreammyles.online
+
+# =========================================================
+# AWS
+# =========================================================
+
+aws:
+
+  region: us-east-1
+
+  accountId: "761018849945"
+
+# =========================================================
+# ALB
+# =========================================================
+
+alb:
+
+  ingressClass: alb
+
+  groupName: enterprise-platform
+
+  scheme: internet-facing
+
+  targetType: ip
+
+  certificateArn: ""
+
+# =========================================================
+# HOSTS
+# =========================================================
+
+hosts:
+
+  auth:
+
+    enabled: true
+
+    hostname: api.dev.dreammyles.online
+
+    service:
+
+      name: auth-service
+
+      port: 8080
+
+  grafana:
+
+    enabled: true
+
+    hostname: grafana.dev.dreammyles.online
+
+    service:
+
+      name: kube-prometheus-stack-grafana
+
+      port: 80
+
+  argocd:
+
+    enabled: true
+
+    hostname: argocd.dev.dreammyles.online
+
+    service:
+
+      name: argocd-server
+
+      port: 80

@@ -1,0 +1,13 @@
+installCRDs: true
+
+replicaCount: 1
+
+serviceAccount:
+
+  create: true
+
+  name: external-secrets
+
+  annotations:
+
+    eks.amazonaws.com/role-arn: ""

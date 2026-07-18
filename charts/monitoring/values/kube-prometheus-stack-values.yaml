@@ -1,0 +1,140 @@
+grafana:
+  enabled: true
+
+  grafana:
+
+  admin:
+
+    existingSecret: grafana-secret
+
+    userKey: username
+
+    passwordKey: password
+
+  defaultDashboardsEnabled: false
+
+  persistence:
+    enabled: true
+    storageClassName: gp3
+    size: 10Gi
+
+  service:
+    type: ClusterIP
+
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 472
+    fsGroup: 472
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+      folder: /var/lib/grafana/dashboards
+
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      labelValue: "1"
+
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+
+      providers:
+        - name: Enterprise Platform
+          orgId: 1
+          folder: ""
+          type: file
+          disableDeletion: false
+          editable: false
+          allowUiUpdates: false
+          updateIntervalSeconds: 30
+
+          options:
+            path: /var/lib/grafana/dashboards
+
+  plugins:
+    - grafana-piechart-panel
+
+################################################################################
+# Prometheus
+################################################################################
+
+prometheus:
+
+  prometheusSpec:
+
+    retention: 15d
+
+    retentionSize: 8GB
+
+    walCompression: true
+
+    externalLabels:
+      cluster: devops-cluster
+      environment: development
+
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: "2"
+        memory: 4Gi
+
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3
+
+          accessModes:
+            - ReadWriteOnce
+
+          resources:
+            requests:
+              storage: 10Gi
+
+################################################################################
+# Alertmanager
+################################################################################
+
+alertmanager:
+
+  enabled: true
+
+  alertmanagerSpec:
+
+    replicas: 1
+
+    retention: 120h
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3
+
+          accessModes:
+            - ReadWriteOnce
+
+          resources:
+            requests:
+              storage: 5Gi

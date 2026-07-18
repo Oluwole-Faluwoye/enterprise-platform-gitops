@@ -1,0 +1,104 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+
+  name: enterprise-platform-ingress
+
+  namespace: {{ .Values.global.namespace }}
+
+  labels:
+
+    {{- include "networking.labels" . | nindent 4 }}
+
+  annotations:
+
+    alb.ingress.kubernetes.io/group.name: {{ .Values.alb.groupName }}
+
+    alb.ingress.kubernetes.io/scheme: {{ .Values.alb.scheme }}
+
+    alb.ingress.kubernetes.io/target-type: {{ .Values.alb.targetType }}
+
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.alb.certificateArn | quote }}
+
+spec:
+
+  ingressClassName: {{ .Values.alb.ingressClass }}
+
+  rules:
+
+    #########################################################
+    # AUTH SERVICE
+    #########################################################
+
+    - host: {{ .Values.hosts.auth.hostname }}
+
+      http:
+
+        paths:
+
+          - path: /
+
+            pathType: Prefix
+
+            backend:
+
+              service:
+
+                name: {{ .Values.hosts.auth.service.name }}
+
+                port:
+
+                  number: {{ .Values.hosts.auth.service.port }}
+
+    #########################################################
+    # GRAFANA
+    #########################################################
+
+    - host: {{ .Values.hosts.grafana.hostname }}
+
+      http:
+
+        paths:
+
+          - path: /
+
+            pathType: Prefix
+
+            backend:
+
+              service:
+
+                name: {{ .Values.hosts.grafana.service.name }}
+
+                port:
+
+                  number: {{ .Values.hosts.grafana.service.port }}
+
+    #########################################################
+    # ARGOCD
+    #########################################################
+
+    - host: {{ .Values.hosts.argocd.hostname }}
+
+      http:
+
+        paths:
+
+          - path: /
+
+            pathType: Prefix
+
+            backend:
+
+              service:
+
+                name: {{ .Values.hosts.argocd.service.name }}
+
+                port:
+
+                  number: {{ .Values.hosts.argocd.service.port }}

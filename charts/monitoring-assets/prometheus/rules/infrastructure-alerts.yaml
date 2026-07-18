@@ -1,0 +1,81 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: infrastructure-alerts
+  namespace: monitoring
+
+  labels:
+    release: prometheus-stack
+    app.kubernetes.io/component: alerting
+    app.kubernetes.io/part-of: enterprise-platform
+
+spec:
+
+  groups:
+
+    - name: infrastructure.alerts
+
+      rules:
+
+        - alert: HighNodeCPUUsage
+
+          expr: node:cpu_utilisation:avg5m > 80
+
+          for: 5m
+
+          labels:
+            severity: warning
+
+          annotations:
+            summary: High CPU usage detected
+            description: CPU usage is above 80% for more than 5 minutes.
+
+        - alert: CriticalNodeCPUUsage
+
+          expr: node:cpu_utilisation:avg5m > 90
+
+          for: 2m
+
+          labels:
+            severity: critical
+
+          annotations:
+            summary: Critical CPU usage
+            description: CPU usage exceeded 90%.
+
+        - alert: HighMemoryUsage
+
+          expr: node:memory_utilisation:percent > 85
+
+          for: 5m
+
+          labels:
+            severity: warning
+
+          annotations:
+            summary: High memory usage
+
+        - alert: CriticalMemoryUsage
+
+          expr: node:memory_utilisation:percent > 95
+
+          for: 2m
+
+          labels:
+            severity: critical
+
+          annotations:
+            summary: Critical memory usage
+
+        - alert: FilesystemAlmostFull
+
+          expr: node:filesystem_utilisation:percent > 85
+
+          for: 10m
+
+          labels:
+            severity: warning
+
+          annotations:
+            summary: Filesystem nearing capacity

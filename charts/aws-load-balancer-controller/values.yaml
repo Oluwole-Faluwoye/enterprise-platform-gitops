@@ -27,9 +27,6 @@ serviceAccount:
   name: aws-load-balancer-controller
 
   annotations: {}
-
-    eks.amazonaws.com/role-arn: arn:aws:iam::761018849945:role/enterprise-platform-dev-aws-load-balancer-controller
-
     
 # =========================================================
 # CONTROLLER

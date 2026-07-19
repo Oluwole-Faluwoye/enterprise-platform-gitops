@@ -3,75 +3,42 @@
 # =========================================================
 
 global:
-
   namespace: default
-
   domain: dev.dreammyles.online
-
 # =========================================================
 # AWS
 # =========================================================
-
 aws:
-
   region: us-east-1
-
   accountId: "761018849945"
-
 # =========================================================
 # ALB
 # =========================================================
-
 alb:
-
   ingressClass: alb
-
   groupName: enterprise-platform
-
   scheme: internet-facing
-
   targetType: ip
-
-  certificateArn: ""
-
+  certificateArn: "arn:aws:acm:us-east-1:761018849945:certificate/68a3d625-3dbe-4b5c-8d0a-ea8444f3336d"
 # =========================================================
 # HOSTS
 # =========================================================
-
 hosts:
-
   auth:
-
     enabled: true
-
     hostname: api.dev.dreammyles.online
-
     service:
-
       name: auth-service
-
       port: 8080
-
   grafana:
-
     enabled: true
-
     hostname: grafana.dev.dreammyles.online
-
     service:
-
       name: kube-prometheus-stack-grafana
-
       port: 80
-
   argocd:
-
     enabled: true
-
     hostname: argocd.dev.dreammyles.online
-
     service:
-
       name: argocd-server
-
       port: 80

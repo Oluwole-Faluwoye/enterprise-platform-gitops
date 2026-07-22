@@ -10,4 +10,4 @@ serviceAccount:
 
   annotations:
 
-    eks.amazonaws.com/role-arn: ""
+    eks.amazonaws.com/role-arn: arn:aws:iam::761018849945:role/enterprise-platform-dev-external-secrets-role

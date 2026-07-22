@@ -24,7 +24,7 @@ spec:
 
         valueFiles:
 
-          - $values/charts/monitoring/kube-prometheus-stack-values.yaml
+          - $values/charts/monitoring/values/kube-prometheus-stack-values.yaml
 
     - repoURL: git@github.com:Oluwole-Faluwoye/enterprise-platform-gitops.git
 

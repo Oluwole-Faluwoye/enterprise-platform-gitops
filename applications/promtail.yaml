@@ -24,7 +24,7 @@ spec:
 
         valueFiles:
 
-          - $values/charts/monitoring/promtail-values.yaml
+          - $values/charts/monitoring/values/promtail-values.yaml
 
     - repoURL: git@github.com:Oluwole-Faluwoye/enterprise-platform-gitops.git
 

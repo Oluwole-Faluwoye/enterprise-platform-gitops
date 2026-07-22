@@ -24,7 +24,7 @@ spec:
 
         valueFiles:
 
-          - $values/charts/monitoring/loki-values.yaml
+          - $values/charts/monitoring/values/loki-values.yaml
 
     - repoURL: git@github.com:Oluwole-Faluwoye/enterprise-platform-gitops.git
 

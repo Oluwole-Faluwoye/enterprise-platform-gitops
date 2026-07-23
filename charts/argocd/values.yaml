@@ -1,39 +1,31 @@
 controller:
   metrics:
     enabled: true
-
 server:
   ingress:
     enabled: true
     ingressClassName: alb
-    hostname: "" 
-
+    hostname: "argocd.dev.dreammyles.online"
     annotations:
       alb.ingress.kubernetes.io/scheme: internet-facing
       alb.ingress.kubernetes.io/target-type: ip
       alb.ingress.kubernetes.io/backend-protocol: HTTP
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
       alb.ingress.kubernetes.io/ssl-redirect: "443"
-      alb.ingress.kubernetes.io/certificate-arn: ""
-      external-dns.alpha.kubernetes.io/hostname: ""
-
+      alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:761018849945:certificate/156cff84-bcd5-4c7c-a5e7-452392e6a69b"
+      external-dns.alpha.kubernetes.io/hostname: "argocd.dev.dreammyles.online"
     tls: false
-
   metrics:
     enabled: true
-
 configs:
   params:
     server.insecure: true
-
 repoServer:
   metrics:
     enabled: true
-
 applicationSet:
   metrics:
     enabled: true
-
 notifications:
   metrics:
     enabled: true

@@ -1,24 +1,16 @@
 clusterName: devops-cluster
-
 region: us-east-1
-
 vpcId: ""
-
 serviceAccount:
   create: true
   name: aws-load-balancer-controller
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::761018849945:role/enterprise-platform-dev-aws-load-balancer-controller
-
 replicaCount: 2
-
 logLevel: info
-
 enableCertManager: false
-
 serviceMonitor:
   enabled: true
-
 podDisruptionBudget:
   enabled: true
   maxUnavailable: 1

@@ -3,6 +3,11 @@ deploymentMode: SingleBinary
 singleBinary:
   replicas: 1
 
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: gp3
+
 loki:
   auth_enabled: false
 
@@ -26,11 +31,6 @@ loki:
     filesystem:
       directory: /var/loki/chunks
 
-  persistence:
-    enabled: true
-    storageClassName: gp3
-    size: 10Gi
-
 gateway:
   enabled: false
 
@@ -42,3 +42,9 @@ write:
 
 backend:
   replicas: 0
+
+chunksCache:
+  enabled: false
+
+resultsCache:
+  enabled: false

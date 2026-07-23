@@ -1,8 +1,6 @@
 grafana:
   enabled: true
 
-  grafana:
-
   admin:
 
     existingSecret: grafana-secret

@@ -30,20 +30,17 @@ refreshInterval: 1h
 
 secrets:
 
+  authService:
+    namespace: auth
+    awsSecret: auth-service
+    targetSecret: auth-service-secret
+
   grafana:
-
+    namespace: monitoring
     awsSecret: grafana/admin
-
     targetSecret: grafana-secret
 
   alertmanager:
-
+    namespace: monitoring
     awsSecret: alertmanager
-
     targetSecret: alertmanager-secret
-
-  authService:
-
-    awsSecret: auth-service
-
-    targetSecret: auth-service-secret

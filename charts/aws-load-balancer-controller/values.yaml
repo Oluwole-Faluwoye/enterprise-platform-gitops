@@ -1,37 +1,24 @@
-# =========================================================
-# GLOBAL
-# =========================================================
+clusterName: devops-cluster
 
-global:
-  clusterName: devops-cluster
-  region: us-east-1
-# =========================================================
-# AWS
-# =========================================================
-aws:
-  vpcId: ""
-# =========================================================
-# SERVICE ACCOUNT
-# =========================================================
+region: us-east-1
+
+vpcId: ""
+
 serviceAccount:
   create: true
   name: aws-load-balancer-controller
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::761018849945:role/enterprise-platform-dev-aws-load-balancer-controller
-# =========================================================
-# CONTROLLER
-# =========================================================
+
 replicaCount: 2
+
 logLevel: info
+
 enableCertManager: false
-# =========================================================
-# METRICS
-# =========================================================
+
 serviceMonitor:
   enabled: true
-# =========================================================
-# HIGH AVAILABILITY
-# =========================================================
+
 podDisruptionBudget:
   enabled: true
   maxUnavailable: 1

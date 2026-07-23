@@ -1,0 +1,39 @@
+controller:
+  metrics:
+    enabled: true
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: alb
+    hostname: "" 
+
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/backend-protocol: HTTP
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: "443"
+      alb.ingress.kubernetes.io/certificate-arn: ""
+      external-dns.alpha.kubernetes.io/hostname: ""
+
+    tls: false
+
+  metrics:
+    enabled: true
+
+configs:
+  params:
+    server.insecure: true
+
+repoServer:
+  metrics:
+    enabled: true
+
+applicationSet:
+  metrics:
+    enabled: true
+
+notifications:
+  metrics:
+    enabled: true

@@ -4,9 +4,16 @@ controller:
 server:
   ingress:
     enabled: true
+
+    controller: generic
+
     ingressClassName: alb
+
     hostname: "argocd.dev.dreammyles.online"
+
     annotations:
+      kubernetes.io/ingress.class: alb
+
       alb.ingress.kubernetes.io/scheme: internet-facing
       alb.ingress.kubernetes.io/target-type: ip
       alb.ingress.kubernetes.io/backend-protocol: HTTP
@@ -14,7 +21,9 @@ server:
       alb.ingress.kubernetes.io/ssl-redirect: "443"
       alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:761018849945:certificate/156cff84-bcd5-4c7c-a5e7-452392e6a69b"
       external-dns.alpha.kubernetes.io/hostname: "argocd.dev.dreammyles.online"
+
     tls: false
+    
   metrics:
     enabled: true
 configs:

@@ -42,3 +42,11 @@ hosts:
     service:
       name: argocd-server
       port: 80
+
+tls:
+  enabled: false
+
+  issuer:
+    name: letsencrypt-prod
+    email: admin@dreammyles.online
+    server: https://acme-v02.api.letsencrypt.org/directory

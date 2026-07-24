@@ -1,4 +1,4 @@
-{{- if .Values.tls.enabled }}
+{{- if (.Values.tls.enabled | default false) }}
 
 apiVersion: cert-manager.io/v1
 

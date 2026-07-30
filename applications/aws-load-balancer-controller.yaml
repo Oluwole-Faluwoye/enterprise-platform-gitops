@@ -21,7 +21,7 @@ spec:
 
       chart: aws-load-balancer-controller
 
-      targetRevision: 1.13.0
+      targetRevision: 3.4.3
 
       helm:
 

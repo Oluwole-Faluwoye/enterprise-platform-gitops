@@ -19,7 +19,7 @@ alb:
   groupName: enterprise-platform
   scheme: internet-facing
   targetType: ip
-  certificateArn: "arn:aws:acm:us-east-1:761018849945:certificate/156cff84-bcd5-4c7c-a5e7-452392e6a69b"
+  certificateArn: "arn:aws:acm:us-east-1:761018849945:certificate/3ffd7e82-7ddd-4a20-acc5-5712c63e99c3"
 # =========================================================
 # HOSTS
 # =========================================================
@@ -42,10 +42,8 @@ hosts:
     service:
       name: argocd-server
       port: 80
-
 tls:
   enabled: false
-
   issuer:
     name: letsencrypt-prod
     email: admin@dreammyles.online

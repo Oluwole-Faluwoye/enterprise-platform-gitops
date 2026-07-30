@@ -12,5 +12,4 @@ enableCertManager: false
 serviceMonitor:
   enabled: true
 podDisruptionBudget:
-  enabled: true
   maxUnavailable: 1

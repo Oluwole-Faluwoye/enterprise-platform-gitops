@@ -1,0 +1,3 @@
+# Reserved for future custom monitoring resources.
+# kube-prometheus-stack values are stored in:
+# values/kube-prometheus-stack-values.yaml

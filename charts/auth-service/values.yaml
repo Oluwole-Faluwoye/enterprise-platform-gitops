@@ -78,8 +78,24 @@ service:
   port: 8080
 
 ingress:
-  enabled: false
+  enabled: true
 
+  className: alb
+
+  annotations:
+    alb.ingress.kubernetes.io/group.name: enterprise-platform
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018849945:certificate/3ffd7e82-7ddd-4a20-acc5-5712c63e99c3
+
+  hosts:
+    - host: api.dev.dreammyles.online
+      paths:
+        - path: /
+          pathType: Prefix
+          
 httpRoute:
   enabled: false
 

@@ -137,3 +137,13 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+serviceMonitor:
+  enabled: true
+
+  labels:
+    release: prometheus-stack
+
+  interval: 15s
+
+  path: /actuator/prometheus

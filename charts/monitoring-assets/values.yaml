@@ -1,23 +1,18 @@
+namespace: monitoring
+
 grafana:
-
   dashboards:
-
     enabled: true
 
   providers:
-
     enabled: true
 
   datasources:
-
     enabled: true
 
 prometheus:
-
   servicemonitors:
-
     enabled: true
 
   rules:
-
     enabled: true

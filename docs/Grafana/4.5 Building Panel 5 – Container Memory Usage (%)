@@ -1,0 +1,503 @@
+# 4.6 Building Panel 5 – Container Memory Usage (%)
+
+---
+
+# Objective
+
+The fifth panel created for the Enterprise Platform Overview dashboard measures the percentage of Kubernetes container memory currently being consumed by the `auth-service`.
+
+Unlike the previous CPU panel, which measures processor utilization, this panel measures memory consumption at the container level.
+
+This metric provides visibility into how close the application is to reaching its Kubernetes memory limit.
+
+This panel answers the operational question:
+
+> **How much of the container's allocated memory is currently being used?**
+
+---
+
+# Why This Metric Matters
+
+Memory is one of the most important resources in a Kubernetes cluster.
+
+Unlike CPU,
+
+memory cannot be throttled.
+
+When a container exceeds its configured memory limit,
+
+the Linux kernel invokes the Out-Of-Memory (OOM) Killer.
+
+The container is terminated immediately.
+
+Kubernetes then restarts the Pod.
+
+Frequent memory exhaustion can lead to:
+
+- Pod restarts
+- Application downtime
+- Failed requests
+- Increased latency
+- CrashLoopBackOff
+- Reduced platform availability
+
+Monitoring memory utilization helps engineers identify these issues before they become production incidents.
+
+---
+
+# Container Memory vs JVM Heap
+
+This distinction caused some discussion during implementation.
+
+Although both metrics relate to memory,
+
+they measure different things.
+
+Container Memory measures **all memory consumed by the container**, including:
+
+- JVM Heap
+- Thread Stacks
+- Metaspace
+- Native Libraries
+- Direct Buffers
+- JVM Internal Structures
+- Operating System Overhead
+
+JVM Heap measures **only the Java Heap**.
+
+Example
+
+```
+
+Container Memory
+
+┌──────────────────────────────┐
+
+│ JVM Heap                     │
+
+│ Thread Stacks                │
+
+│ Metaspace                    │
+
+│ Native Libraries             │
+
+│ Direct Buffers               │
+
+│ JVM Internal Memory          │
+
+└──────────────────────────────┘
+
+```
+
+Because of this,
+
+Container Memory is always greater than or equal to JVM Heap.
+
+---
+
+# Navigation
+
+Open Grafana.
+
+Navigate to:
+
+```
+
+Dashboards
+
+↓
+
+Enterprise Platform Overview
+
+↓
+
+Edit Dashboard
+
+↓
+
+Add
+
+↓
+
+Visualization
+
+```
+
+Datasource
+
+```
+
+Prometheus
+
+```
+
+---
+
+# Switch to Code Mode
+
+If the editor opens in Builder Mode,
+
+click
+
+```
+
+Code
+
+```
+
+---
+
+# PromQL Query
+
+Paste the following query exactly as shown.
+
+```promql
+sum(container_memory_working_set_bytes{namespace="auth",pod=~"auth-service.*"})
+/
+sum(container_spec_memory_limit_bytes{namespace="auth",pod=~"auth-service.*"})
+```
+
+Click
+
+```
+
+Run Queries
+
+```
+
+---
+
+# Understanding the Query
+
+The numerator
+
+```promql
+container_memory_working_set_bytes
+```
+
+represents the amount of memory actively being used by the container.
+
+Unlike total allocated memory,
+
+this excludes reclaimable cache and focuses on the working set.
+
+---
+
+The denominator
+
+```promql
+container_spec_memory_limit_bytes
+```
+
+represents the maximum amount of memory the container is allowed to consume.
+
+---
+
+The query therefore calculates:
+
+```
+
+Current Memory Usage
+
+———————————————
+
+Maximum Memory Limit
+
+```
+
+which produces a value between
+
+```
+
+0
+
+and
+
+1
+
+```
+
+Example
+
+```
+
+Memory Used
+
+512 MB
+
+Memory Limit
+
+1024 MB
+
+Result
+
+0.50
+
+=
+
+50%
+
+```
+
+---
+
+# Why Use sum()
+
+The Enterprise Platform may eventually run multiple replicas.
+
+Each Pod exposes its own container metrics.
+
+Using
+
+```promql
+sum(...)
+/
+sum(...)
+```
+
+calculates the percentage across all Pods,
+
+providing a platform-wide view of memory utilization.
+
+---
+
+# Selecting the Visualization
+
+Locate
+
+```
+
+Visualization
+
+```
+
+Choose
+
+```
+
+Gauge
+
+```
+
+The Gauge visualization provides an immediate indication of resource consumption.
+
+---
+
+# Panel Title
+
+Configure
+
+```
+
+Container Memory %
+
+```
+
+---
+
+# Standard Options
+
+Expand
+
+```
+
+Standard Options
+
+```
+
+Configure
+
+Unit
+
+```
+
+Percent (0.0–1.0)
+
+```
+
+Decimals
+
+```
+
+2
+
+```
+
+---
+
+# Configure Thresholds
+
+Expand
+
+```
+
+Thresholds
+
+```
+
+Configure
+
+| Color | Value | Meaning |
+|--------|------:|---------|
+| 🟢 Green | 0.00 | Normal memory utilization |
+| 🟡 Yellow | 0.70 | Memory usage becoming elevated |
+| 🔴 Red | 0.90 | Memory usage approaching configured limit |
+
+These thresholds provide early warning before the container reaches its configured memory limit.
+
+---
+
+# Expected Result
+
+Typical values include:
+
+```
+
+21%
+
+34%
+
+48%
+
+67%
+
+```
+
+Values approaching
+
+```
+
+90%
+
+```
+
+should be investigated.
+
+---
+
+# Verification
+
+Generate application traffic.
+
+Observe the gauge.
+
+Memory utilization should gradually increase as the application processes requests.
+
+Unlike CPU,
+
+memory often increases more slowly because objects remain allocated until reclaimed by the JVM Garbage Collector.
+
+---
+
+# Troubleshooting
+
+## Problem
+
+The panel displays
+
+```
+
+No Data
+
+```
+
+Possible causes include:
+
+- kube-state-metrics unavailable
+- cAdvisor metrics unavailable
+- Incorrect namespace
+- Incorrect Pod selector
+- Prometheus not scraping Kubernetes metrics
+
+---
+
+## Verify Metric Availability
+
+Execute
+
+```promql
+container_memory_working_set_bytes
+```
+
+Verify that the metric exists.
+
+Next,
+
+execute
+
+```promql
+container_spec_memory_limit_bytes
+```
+
+Confirm that memory limits are available.
+
+If the denominator returns no data,
+
+verify that memory limits have been configured on the Deployment.
+
+---
+
+# Real Output During This Project
+
+Initially,
+
+the dashboard displayed JVM Heap Memory in bytes.
+
+During implementation,
+
+this was replaced with **Container Memory Percentage** because percentages are significantly easier to interpret during operations.
+
+Displaying memory utilization as a percentage allows engineers to determine immediately whether the application is approaching its configured memory limit.
+
+The original byte-based panel was retained later as a historical graph rather than as the primary operational metric.
+
+---
+
+# Operational Use Cases
+
+This panel becomes particularly valuable during:
+
+- Load testing
+- Memory leak investigations
+- Kubernetes autoscaling validation
+- JVM tuning
+- Capacity planning
+- Production monitoring
+
+It should always be interpreted alongside:
+
+- CPU Usage %
+- JVM Heap %
+- Average Response Time
+
+Together,
+
+these metrics explain whether increased memory utilization is affecting application performance.
+
+---
+
+# Interview Talking Points
+
+**Question**
+
+> Why did you monitor Container Memory Percentage instead of raw bytes?
+
+**Example Response**
+
+> Raw memory values require engineers to know the configured memory limits before they can determine whether utilization is healthy. Displaying memory as a percentage immediately communicates operational health and makes it easier to identify containers approaching their configured limits. I retained byte-based metrics as historical trend graphs, while using percentage-based gauges for day-to-day operational monitoring.
+
+---
+
+# Summary
+
+The Container Memory panel extends infrastructure monitoring by measuring total memory consumption at the Kubernetes container level.
+
+At this stage, the Enterprise Platform Overview dashboard answers five critical operational questions:
+
+- Is the application receiving traffic?
+- Is it responding quickly?
+- Is it processing requests successfully?
+- Is CPU utilization healthy?
+- Is container memory utilization within acceptable limits?
+
+The next panel focuses specifically on **JVM Heap Memory Percentage**, allowing engineers to distinguish between overall container memory usage and Java heap utilization.

@@ -1,0 +1,635 @@
+# 4.7 Building Panel 6 – JVM Heap Usage (%)
+
+---
+
+# Objective
+
+The sixth panel created for the Enterprise Platform Overview dashboard measures Java Virtual Machine (JVM) heap utilization as a percentage of the maximum configured heap size.
+
+Unlike the Container Memory panel, which measures total memory consumed by the Kubernetes container, this panel focuses exclusively on memory allocated to the Java Heap.
+
+Monitoring JVM Heap utilization provides visibility into application memory behavior and is particularly useful when diagnosing memory leaks, garbage collection activity, and JVM tuning issues.
+
+This panel answers the operational question:
+
+> **How much of the JVM heap is currently in use?**
+
+---
+
+# Why JVM Heap Matters
+
+Java applications execute inside a Java Virtual Machine (JVM).
+
+Unlike applications written in C or Go, Java manages memory automatically using the Garbage Collector (GC).
+
+The JVM Heap stores objects created during application execution.
+
+Examples include:
+
+- HTTP request objects
+- Response objects
+- Service objects
+- Repository objects
+- Cached objects
+- Collections
+- Strings
+- Business objects
+
+As the application processes requests, the heap grows.
+
+When memory is no longer required, the Garbage Collector reclaims unused objects.
+
+Monitoring heap utilization helps engineers determine whether:
+
+- Garbage Collection is functioning correctly.
+- The heap is too small.
+- The heap is too large.
+- A memory leak may exist.
+- Application performance is degrading.
+
+---
+
+# JVM Heap vs Container Memory
+
+One of the most important concepts discussed during implementation was the difference between Container Memory and JVM Heap.
+
+Although they appear similar, they measure different things.
+
+Container Memory includes:
+
+```
+JVM Heap
+
++
+
+Metaspace
+
++
+
+Thread Stacks
+
++
+
+Native Libraries
+
++
+
+Direct Buffers
+
++
+
+JVM Internal Structures
+
++
+
+Operating System Memory
+```
+
+JVM Heap includes only:
+
+```
+Java Objects
+```
+
+Therefore,
+
+```
+Container Memory
+
+≥
+
+JVM Heap
+```
+
+This explains why:
+
+```
+Container Memory
+
+80%
+
+JVM Heap
+
+35%
+```
+
+is perfectly normal.
+
+The remaining memory is consumed by non-heap components.
+
+Understanding this distinction is an important platform engineering concept.
+
+---
+
+# Why We Changed This Panel
+
+During implementation,
+
+the original panel displayed:
+
+```
+Heap Memory
+
+(Bytes)
+```
+
+Example:
+
+```
+34327344 Bytes
+```
+
+Although technically correct,
+
+this format required engineers to mentally compare the current value against the configured heap size.
+
+Operationally,
+
+this was not ideal.
+
+Instead,
+
+the panel was redesigned to display:
+
+```
+Heap Utilization %
+
+```
+
+Percentages allow engineers to immediately determine whether heap utilization is healthy.
+
+---
+
+# Navigation
+
+Open Grafana.
+
+Navigate to:
+
+```
+Dashboards
+
+↓
+
+Enterprise Platform Overview
+
+↓
+
+Edit Dashboard
+
+↓
+
+Add
+
+↓
+
+Visualization
+```
+
+Select
+
+```
+Prometheus
+```
+
+---
+
+# Switch to Code Mode
+
+If the Query Editor opens in Builder Mode,
+
+click
+
+```
+Code
+```
+
+---
+
+# PromQL Query
+
+Paste the following query exactly as shown.
+
+```promql
+sum(jvm_memory_used_bytes{area="heap",job="auth-service"})
+/
+sum(jvm_memory_max_bytes{area="heap",job="auth-service"})
+```
+
+Click
+
+```
+Run Queries
+```
+
+---
+
+# Understanding the Query
+
+Micrometer exposes two important heap metrics.
+
+The first metric is:
+
+```promql
+jvm_memory_used_bytes
+```
+
+This represents the amount of heap currently occupied by Java objects.
+
+---
+
+The second metric is:
+
+```promql
+jvm_memory_max_bytes
+```
+
+This represents the maximum heap available to the JVM.
+
+---
+
+The query calculates:
+
+```
+Current Heap Usage
+
+———————————————
+
+Maximum Heap Size
+```
+
+Result:
+
+```
+0
+
+↓
+
+1
+```
+
+Example
+
+```
+Heap Used
+
+512 MB
+
+Maximum Heap
+
+1024 MB
+
+Result
+
+0.50
+
+=
+
+50%
+```
+
+---
+
+# Why Use sum()
+
+Modern Spring Boot applications may run multiple Pods.
+
+Each Pod exposes its own JVM metrics.
+
+Using:
+
+```promql
+sum(...)
+/
+sum(...)
+```
+
+aggregates heap utilization across all running Pods.
+
+This provides a single operational metric representing the entire platform.
+
+---
+
+# Selecting the Visualization
+
+Locate
+
+```
+Visualization
+```
+
+Select
+
+```
+Gauge
+```
+
+The Gauge visualization provides an immediate indication of heap utilization.
+
+---
+
+# Panel Title
+
+Configure
+
+```
+JVM Heap %
+```
+
+---
+
+# Standard Options
+
+Expand
+
+```
+Standard Options
+```
+
+Configure
+
+Unit
+
+```
+Percent (0.0–1.0)
+```
+
+Decimals
+
+```
+2
+```
+
+---
+
+# Configure Thresholds
+
+Expand
+
+```
+Thresholds
+```
+
+Configure:
+
+| Color | Value | Meaning |
+|--------|------:|---------|
+| 🟢 Green | 0.00 | Normal heap utilization |
+| 🟡 Yellow | 0.70 | Heap usage becoming elevated |
+| 🔴 Red | 0.90 | Heap nearly exhausted |
+
+These thresholds provide an early indication that the JVM may require tuning or that a memory leak is developing.
+
+---
+
+# Expected Result
+
+Typical values include:
+
+```
+18%
+
+34%
+
+42%
+
+55%
+```
+
+Values consistently above:
+
+```
+90%
+```
+
+should be investigated.
+
+---
+
+# Verification
+
+Generate application traffic.
+
+Example:
+
+```
+Refresh
+
+https://api.dev.dreammyles.online/actuator/health
+
+multiple times
+```
+
+Observe the JVM Heap gauge.
+
+Heap utilization should increase as objects are allocated.
+
+After Garbage Collection,
+
+heap utilization should decrease.
+
+This "saw-tooth" pattern is expected behavior.
+
+---
+
+# Understanding Heap Behavior
+
+Unlike CPU utilization,
+
+heap memory does not always decrease immediately.
+
+A healthy JVM often displays a repeating pattern.
+
+```
+20%
+
+↓
+
+35%
+
+↓
+
+48%
+
+↓
+
+62%
+
+↓
+
+GC Runs
+
+↓
+
+28%
+
+↓
+
+42%
+
+↓
+
+57%
+
+↓
+
+GC Runs
+
+↓
+
+30%
+```
+
+This repeating increase and decrease indicates that Garbage Collection is functioning correctly.
+
+If heap utilization continually increases without decreasing,
+
+a memory leak may exist.
+
+---
+
+# Troubleshooting
+
+## Problem
+
+The panel displays:
+
+```
+No Data
+```
+
+Possible causes:
+
+- Prometheus is not scraping the application.
+- Incorrect datasource.
+- Incorrect `job` label.
+- Spring Boot Actuator not configured.
+- Micrometer Prometheus Registry missing.
+
+---
+
+## Verify Metric Availability
+
+Execute:
+
+```promql
+jvm_memory_used_bytes
+```
+
+Next:
+
+```promql
+jvm_memory_max_bytes
+```
+
+Both metrics should return data.
+
+---
+
+## Verify Target
+
+Execute:
+
+```promql
+up
+```
+
+Expected:
+
+```
+auth-service = 1
+```
+
+---
+
+# Real Output During This Project
+
+Initially,
+
+this panel displayed:
+
+```
+Heap Memory
+
+(Bytes)
+```
+
+During implementation,
+
+we discussed whether displaying raw bytes was useful for day-to-day monitoring.
+
+The decision was made to replace the byte-based gauge with a percentage-based gauge because percentages provide a much clearer operational view.
+
+The byte-based metric was retained for a historical Time Series panel later in the dashboard.
+
+This approach allows engineers to:
+
+- Quickly assess current heap health using the gauge.
+- Analyze heap growth over time using the graph.
+
+---
+
+# Operational Use Cases
+
+This panel is especially valuable during:
+
+- Load testing
+- JVM tuning
+- Garbage Collection analysis
+- Memory leak investigations
+- Capacity planning
+- Production incident response
+
+It should always be interpreted together with:
+
+- Container Memory %
+- CPU Usage %
+- Average Response Time
+
+Examining these metrics together provides a comprehensive understanding of application resource utilization.
+
+---
+
+# Interview Talking Points
+
+**Question**
+
+> Why did you create both Container Memory % and JVM Heap % panels?
+
+**Example Response**
+
+> Container Memory and JVM Heap measure different aspects of memory utilization. Container Memory represents the total memory consumed by the Kubernetes container, including heap, thread stacks, native libraries, and JVM overhead. JVM Heap measures only the Java heap used for object allocation. Monitoring both metrics allows engineers to distinguish between application-level memory usage and total container resource consumption. This distinction is especially useful when diagnosing memory leaks or tuning JVM settings.
+
+---
+
+# Lessons Learned During Implementation
+
+One of the most valuable discussions during implementation involved deciding whether to display memory in bytes or as a percentage.
+
+Although byte values are technically accurate, they require engineers to know the configured heap size before determining whether utilization is healthy.
+
+Displaying heap utilization as a percentage makes operational decisions much easier.
+
+The final dashboard therefore uses:
+
+- Percentage gauges for current health.
+- Byte-based Time Series panels for historical analysis.
+
+This combination provides both immediate operational visibility and detailed historical insight.
+
+---
+
+# Summary
+
+The JVM Heap Usage panel completes the memory utilization section of the Enterprise Platform Overview dashboard.
+
+At this stage, the dashboard provides visibility into:
+
+- Application throughput
+- Application latency
+- Server-side errors
+- CPU utilization
+- Container memory utilization
+- JVM heap utilization
+
+The next panel monitors the number of running application Pods, allowing engineers to verify deployment health and observe Horizontal Pod Autoscaler (HPA) behavior during load testing.

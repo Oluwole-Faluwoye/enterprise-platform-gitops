@@ -1,0 +1,455 @@
+# 4.5 Building Panel 4 – CPU Usage (%)
+
+---
+
+# Objective
+
+The fourth panel created for the Enterprise Platform Overview dashboard measures the CPU utilization of the `auth-service`.
+
+Unlike the previous panels, which focused on application behavior (traffic, latency, and errors), this panel focuses on the resources consumed by the application.
+
+CPU utilization is one of the primary indicators of application health and is commonly monitored during load testing, autoscaling, and production incident response.
+
+This panel answers the operational question:
+
+> **How much CPU is the application currently consuming?**
+
+---
+
+# Why This Metric Matters
+
+Monitoring CPU usage helps determine whether the application has sufficient compute resources to process incoming traffic.
+
+High CPU utilization may indicate:
+
+- Increased request volume
+- Expensive computations
+- Inefficient algorithms
+- Excessive garbage collection
+- Thread contention
+- Poor application performance
+
+Monitoring CPU also helps validate Horizontal Pod Autoscaler (HPA) behavior.
+
+For example:
+
+- CPU increases
+- HPA creates additional Pods
+- CPU decreases
+
+This confirms that autoscaling is functioning correctly.
+
+---
+
+# Navigation
+
+Open Grafana.
+
+Navigate to:
+
+```
+
+Dashboards
+
+↓
+
+Enterprise Platform Overview
+
+↓
+
+Edit Dashboard
+
+↓
+
+Add
+
+↓
+
+Visualization
+
+```
+
+Select:
+
+```
+Prometheus
+```
+
+---
+
+# Switch to Code Mode
+
+If Builder Mode is displayed,
+
+click
+
+```
+Code
+```
+
+---
+
+# PromQL Query
+
+Paste the following query exactly as shown.
+
+```promql
+avg(process_cpu_usage{job="auth-service"})
+```
+
+Click
+
+```
+Run Queries
+```
+
+---
+
+# Understanding the Query
+
+The metric
+
+```
+process_cpu_usage
+```
+
+is exposed by Spring Boot through Micrometer.
+
+It represents the percentage of CPU currently consumed by the running Java process.
+
+Unlike Kubernetes container metrics,
+
+this metric only measures the JVM process itself.
+
+Example
+
+```
+Application
+
+↓
+
+Spring Boot
+
+↓
+
+Micrometer
+
+↓
+
+process_cpu_usage
+
+↓
+
+Prometheus
+
+↓
+
+Grafana
+```
+
+---
+
+## Why Use avg()
+
+In a Kubernetes deployment,
+
+multiple Pods may be running simultaneously.
+
+Each Pod reports its own CPU utilization.
+
+Example
+
+```
+Pod A
+
+22%
+
+Pod B
+
+18%
+
+Pod C
+
+25%
+```
+
+Using
+
+```promql
+avg(process_cpu_usage{job="auth-service"})
+```
+
+produces a single average CPU utilization across all application Pods.
+
+This provides a simplified operational view.
+
+---
+
+# Selecting the Visualization
+
+Locate
+
+```
+Visualization
+```
+
+Select
+
+```
+Gauge
+```
+
+The Gauge visualization provides an immediate visual indication of CPU utilization.
+
+Unlike a graph,
+
+a gauge clearly shows whether the application is operating within acceptable thresholds.
+
+---
+
+# Panel Title
+
+Configure
+
+```
+CPU Usage
+```
+
+---
+
+# Standard Options
+
+Expand
+
+```
+Standard Options
+```
+
+Configure
+
+Unit
+
+```
+Percent (0.0–1.0)
+```
+
+**Important**
+
+The `process_cpu_usage` metric returns a value between **0** and **1**.
+
+Example
+
+```
+0.15
+
+=
+
+15%
+```
+
+Selecting
+
+```
+Percent (0.0–1.0)
+```
+
+ensures Grafana automatically converts the value into a percentage.
+
+Decimals
+
+```
+2
+```
+
+---
+
+# Threshold Configuration
+
+Expand
+
+```
+Thresholds
+```
+
+During implementation, the following thresholds were configured.
+
+| Color | Value | Meaning |
+|--------|------:|---------|
+| 🟢 Green | 0.00 | Normal CPU utilization |
+| 🟡 Yellow | 0.60 | CPU usage becoming elevated |
+| 🔴 Red | 0.80 | High CPU utilization requiring investigation |
+
+These thresholds provide an immediate visual indication of resource consumption.
+
+---
+
+# Expected Result
+
+Example values include:
+
+```
+12%
+
+25%
+
+43%
+
+61%
+```
+
+During periods of low activity,
+
+values below 20% are common.
+
+During load testing,
+
+CPU utilization should increase as additional requests are processed.
+
+---
+
+# Verification
+
+Generate application traffic.
+
+Example
+
+```
+Refresh
+
+https://api.dev.dreammyles.online/actuator/health
+
+multiple times
+```
+
+or
+
+Run a load test (covered in Chapter 9).
+
+Observe the CPU Usage gauge.
+
+The value should increase as the application performs additional work.
+
+---
+
+# Troubleshooting
+
+## Problem
+
+The panel displays
+
+```
+No Data
+```
+
+Possible causes:
+
+- Prometheus is not scraping the application.
+- Incorrect datasource selected.
+- Incorrect `job` label.
+- Micrometer metrics unavailable.
+
+---
+
+## Verify Metric Availability
+
+Execute
+
+```promql
+process_cpu_usage
+```
+
+If no series are returned,
+
+verify:
+
+- Spring Boot Actuator is enabled.
+- Micrometer Prometheus Registry is installed.
+- `/actuator/prometheus` is reachable.
+- Prometheus is scraping the application.
+
+---
+
+## Verify the Target
+
+Execute
+
+```promql
+up
+```
+
+Expected
+
+```
+auth-service = 1
+```
+
+---
+
+# Real Output During This Project
+
+During implementation,
+
+the CPU Usage panel initially displayed valid data once Prometheus began scraping the application.
+
+The primary challenge was not the PromQL query.
+
+Instead,
+
+Prometheus had previously failed to discover the `auth-service` because the Kubernetes `ServiceMonitor` selector did not match the Service labels.
+
+After correcting the label mismatch,
+
+the CPU metric became immediately available.
+
+This reinforced an important operational principle:
+
+> A "No Data" panel is often caused by issues earlier in the monitoring pipeline rather than an incorrect dashboard configuration.
+
+---
+
+# Operational Use Cases
+
+This panel is especially useful during:
+
+- Load testing with k6
+- Autoscaling validation
+- Performance tuning
+- Production monitoring
+- Incident response
+- JVM optimization
+
+It should always be interpreted alongside:
+
+- Requests/sec
+- Average Response Time
+- Container Memory %
+- JVM Heap %
+
+Viewing these metrics together provides a more complete understanding of application performance.
+
+---
+
+# Interview Talking Points
+
+**Question**
+
+> Why did you monitor `process_cpu_usage` instead of container CPU metrics?
+
+**Example Response**
+
+> Initially, I used `process_cpu_usage` because it is provided directly by Micrometer and measures CPU utilization for the Java process itself. This allowed me to validate application behavior independently of Kubernetes. Later, I added container-level CPU metrics to monitor total container resource consumption. Together, these metrics provide both application-level and infrastructure-level visibility.
+
+---
+
+# Summary
+
+The CPU Usage panel introduces infrastructure monitoring into the Enterprise Platform Overview dashboard.
+
+Combined with the previous panels, the dashboard now answers four key operational questions:
+
+- Is the application receiving traffic?
+- Is it responding quickly?
+- Is it processing requests successfully?
+- Is CPU utilization within acceptable limits?
+
+The next panel expands resource monitoring by measuring **Container Memory Utilization (%)**, allowing engineers to distinguish between total container memory usage and JVM heap usage.

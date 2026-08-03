@@ -1,0 +1,656 @@
+# 4.11 Building Panel 10 – JVM Heap Usage Over Time
+
+---
+
+# Objective
+
+The tenth panel created for the Enterprise Platform Overview dashboard displays JVM Heap utilization as a historical Time Series graph.
+
+Unlike the JVM Heap Gauge, which displays only the current heap utilization, this graph visualizes how heap usage changes over time.
+
+Historical heap analysis is one of the most valuable techniques for understanding Java application behavior because it reveals Garbage Collection activity, object allocation patterns, memory leaks, and application performance under load.
+
+This panel answers the operational question:
+
+> **How has JVM Heap utilization changed over time?**
+
+---
+
+# Why This Panel Matters
+
+The JVM Heap Gauge answers:
+
+```
+How much heap is being used right now?
+```
+
+The Time Series graph answers much more important questions.
+
+Examples include:
+
+- Is Garbage Collection working?
+- Does heap usage continually increase?
+- Does heap usage return to normal?
+- Is a memory leak developing?
+- Does increased traffic increase heap usage?
+- How does the application behave during load testing?
+
+These questions cannot be answered by a single gauge.
+
+They require historical data.
+
+---
+
+# Navigation
+
+Open Grafana.
+
+Navigate to:
+
+```
+
+Dashboards
+
+↓
+
+Enterprise Platform Overview
+
+↓
+
+Edit Dashboard
+
+↓
+
+Add
+
+↓
+
+Visualization
+
+```
+
+Datasource
+
+```
+Prometheus
+```
+
+---
+
+# Switch to Code Mode
+
+If Builder Mode is displayed,
+
+click
+
+```
+Code
+```
+
+---
+
+# PromQL Query
+
+Unlike the JVM Heap Gauge,
+
+this graph intentionally displays the raw heap memory in bytes.
+
+Paste the following query exactly as shown.
+
+```promql
+sum(jvm_memory_used_bytes{area="heap",job="auth-service"})
+```
+
+Click
+
+```
+Run Queries
+```
+
+---
+
+# Why We Use Bytes Instead of Percent Here
+
+This decision was made deliberately during implementation.
+
+Earlier,
+
+we converted JVM Heap to a percentage because percentages provide a clearer operational view.
+
+However,
+
+historical graphs benefit from displaying the actual heap size.
+
+Example
+
+```
+200 MB
+
+↓
+
+350 MB
+
+↓
+
+470 MB
+
+↓
+
+GC
+
+↓
+
+180 MB
+
+↓
+
+290 MB
+
+↓
+
+410 MB
+
+↓
+
+GC
+
+↓
+
+210 MB
+```
+
+This makes Garbage Collection behavior much easier to recognize.
+
+---
+
+# Understanding the Query
+
+The metric
+
+```promql
+jvm_memory_used_bytes
+```
+
+represents the amount of heap currently occupied by Java objects.
+
+Unlike the Gauge,
+
+the graph displays the raw heap size rather than the percentage of available heap.
+
+This provides greater insight into JVM behavior.
+
+---
+
+# Selecting the Visualization
+
+Locate
+
+```
+Visualization
+```
+
+Select
+
+```
+Time Series
+```
+
+Grafana immediately displays a historical graph.
+
+---
+
+# Panel Title
+
+Configure
+
+```
+JVM Heap Usage Over Time
+```
+
+---
+
+# Standard Options
+
+Configure
+
+Unit
+
+```
+Data
+
+↓
+
+Bytes (IEC)
+```
+
+Grafana automatically converts bytes into:
+
+```
+KB
+
+MB
+
+GB
+```
+
+depending on the magnitude of the values.
+
+---
+
+Decimals
+
+```
+Auto
+```
+
+---
+
+# Graph Configuration
+
+Recommended settings
+
+Legend
+
+```
+Auto
+```
+
+Line Width
+
+```
+2
+```
+
+Fill Opacity
+
+```
+20%
+```
+
+Interpolation
+
+```
+Linear
+```
+
+These settings provide a clean visualization of heap growth and garbage collection cycles.
+
+---
+
+# Expected Result
+
+A healthy Java application typically displays a repeating saw-tooth pattern.
+
+Example
+
+```
+
+500 MB
+
+          ▲
+          │
+          │
+450 MB    │      ▲
+          │      │
+400 MB    │      │
+          │      │
+350 MB    │      │
+          │      │
+300 MB    │      │
+          │      │
+250 MB    ▼      ▼
+          │      │
+200 MB ───────────────────────────────► Time
+
+```
+
+This pattern indicates:
+
+- Objects are allocated.
+- Heap utilization increases.
+- Garbage Collection executes.
+- Heap utilization decreases.
+- The cycle repeats.
+
+This is expected JVM behavior.
+
+---
+
+# Recognizing a Healthy JVM
+
+Healthy applications typically exhibit:
+
+```
+Heap ↑
+
+↓
+
+Garbage Collection
+
+↓
+
+Heap ↓
+
+↓
+
+Heap ↑
+
+↓
+
+Garbage Collection
+
+↓
+
+Heap ↓
+```
+
+This repeating pattern indicates that the JVM is reclaiming unused objects correctly.
+
+---
+
+# Recognizing a Memory Leak
+
+A memory leak appears very differently.
+
+Example
+
+```
+
+150 MB
+
+↓
+
+220 MB
+
+↓
+
+300 MB
+
+↓
+
+420 MB
+
+↓
+
+520 MB
+
+↓
+
+640 MB
+
+↓
+
+780 MB
+
+↓
+
+900 MB
+
+↓
+
+OOM
+
+```
+
+Notice that the graph never returns to lower values.
+
+Instead,
+
+heap utilization continually increases.
+
+This suggests that objects are not being released.
+
+---
+
+# Verification
+
+Generate application traffic.
+
+Refresh
+
+```
+https://api.dev.dreammyles.online/actuator/health
+```
+
+multiple times.
+
+Observe the graph.
+
+Heap utilization should gradually increase.
+
+Eventually,
+
+Garbage Collection should reduce heap utilization.
+
+---
+
+# During Load Testing
+
+This panel becomes especially valuable during Chapter 9.
+
+Expected behavior:
+
+```
+Requests/sec ↑
+
+↓
+
+Heap ↑
+
+↓
+
+Garbage Collection
+
+↓
+
+Heap ↓
+
+↓
+
+Requests/sec Continues
+
+↓
+
+Heap ↑
+
+```
+
+This indicates that the JVM is handling increased traffic correctly.
+
+---
+
+# Correlating Heap with Other Metrics
+
+The JVM Heap graph should always be interpreted together with:
+
+```
+Container Memory %
+
+↓
+
+CPU Usage
+
+↓
+
+Average Response Time
+
+↓
+
+Request Rate
+```
+
+Example
+
+```
+Traffic ↑
+
+↓
+
+Heap ↑
+
+↓
+
+CPU ↑
+
+↓
+
+Latency Stable
+
+↓
+
+Healthy
+```
+
+versus
+
+```
+Traffic ↑
+
+↓
+
+Heap ↑
+
+↓
+
+Heap Never Falls
+
+↓
+
+Latency ↑
+
+↓
+
+5xx Errors ↑
+
+↓
+
+Potential Memory Leak
+```
+
+This type of analysis is exactly how production incidents are investigated.
+
+---
+
+# Troubleshooting
+
+## Panel Displays "No Data"
+
+Verify
+
+```promql
+jvm_memory_used_bytes
+```
+
+Verify
+
+```promql
+up
+```
+
+Expected
+
+```
+auth-service = 1
+```
+
+---
+
+## Heap Appears Flat
+
+Possible causes:
+
+- No traffic
+- Application idle
+- Heap already allocated
+- Garbage Collection recently executed
+
+Generate additional requests and observe the graph again.
+
+---
+
+# Real Output During This Project
+
+During implementation,
+
+we initially considered using Heap Percentage for both the Gauge and the historical graph.
+
+After discussion,
+
+the dashboard was redesigned.
+
+Final implementation:
+
+Gauge
+
+```
+Heap Percentage
+```
+
+Time Series
+
+```
+Heap Bytes
+```
+
+This combination provides both:
+
+- Immediate operational visibility.
+- Detailed JVM analysis.
+
+This design closely matches production dashboards used by Java platform engineering teams.
+
+---
+
+# Operational Use Cases
+
+This panel is especially valuable during:
+
+- Memory leak investigations
+- JVM tuning
+- Garbage Collection analysis
+- Load testing
+- Performance optimization
+- Capacity planning
+- Incident response
+
+---
+
+# Interview Talking Points
+
+**Question**
+
+> Why did you use Heap Percentage for the Gauge but Heap Bytes for the historical graph?
+
+**Example Response**
+
+> The Gauge is intended to communicate operational health quickly, so percentages are easier to interpret. The Time Series graph is intended for deeper analysis. Displaying heap usage in bytes makes Garbage Collection patterns and memory growth much easier to observe. Using both representations provides immediate visibility while preserving detailed diagnostic information.
+
+---
+
+# Lessons Learned During Implementation
+
+One of the most valuable design decisions during implementation was separating operational monitoring from diagnostic monitoring.
+
+Current health is best represented using percentages.
+
+Historical analysis is better represented using raw values.
+
+Using the appropriate visualization for each purpose significantly improves dashboard usability.
+
+---
+
+# Summary
+
+The JVM Heap Usage Over Time panel completes the historical resource analysis section of the Enterprise Platform Overview dashboard.
+
+The dashboard now provides both current and historical visibility into:
+
+- Request throughput
+- Response latency
+- Error rate
+- CPU utilization
+- Container memory utilization
+- JVM heap utilization
+- Running Pods
+
+The next section integrates Loki to display live application logs alongside metrics, allowing engineers to correlate logs with performance data during production troubleshooting.

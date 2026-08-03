@@ -1,0 +1,493 @@
+# 4.9 Building Panel 8 – Request Rate Over Time
+
+---
+
+# Objective
+
+The eighth panel created for the Enterprise Platform Overview dashboard displays the HTTP request rate over time.
+
+Unlike the Requests/sec Stat panel, which only displays the current request rate, this Time Series panel allows engineers to observe historical traffic patterns.
+
+This visualization makes it possible to answer questions such as:
+
+- When did traffic begin increasing?
+- Was there a sudden traffic spike?
+- Did traffic gradually increase?
+- When did traffic return to normal?
+- How did the platform behave during load testing?
+
+This panel answers the operational question:
+
+> **How has application traffic changed over time?**
+
+---
+
+# Why This Panel Matters
+
+The Requests/sec Stat panel provides only the current throughput.
+
+For example
+
+```
+15.6 req/s
+```
+
+This tells us the platform is currently processing approximately sixteen requests per second.
+
+However,
+
+it provides no historical context.
+
+Suppose an engineer notices:
+
+```
+Average Response Time
+
+↓
+
+450 ms
+```
+
+The obvious question becomes:
+
+> Did traffic increase?
+
+The Request Rate graph immediately answers this question.
+
+Historical visualization allows engineers to correlate traffic with:
+
+- CPU utilization
+- Memory utilization
+- JVM Heap growth
+- Response time
+- Error rate
+- Autoscaling events
+
+---
+
+# Navigation
+
+Open Grafana.
+
+Navigate to:
+
+```
+Dashboards
+
+↓
+
+Enterprise Platform Overview
+
+↓
+
+Edit Dashboard
+
+↓
+
+Add
+
+↓
+
+Visualization
+```
+
+Datasource
+
+```
+Prometheus
+```
+
+---
+
+# Switch to Code Mode
+
+If Builder Mode is displayed,
+
+click
+
+```
+Code
+```
+
+---
+
+# PromQL Query
+
+Paste the following query.
+
+```promql
+sum(rate(http_server_requests_seconds_count{job="auth-service"}[5m]))
+```
+
+Click
+
+```
+Run Queries
+```
+
+Notice that this is the same query used for the Requests/sec Stat panel.
+
+The only difference is the visualization.
+
+---
+
+# Understanding the Query
+
+The query calculates the number of HTTP requests processed each second over the previous five minutes.
+
+```promql
+rate(...)
+```
+
+calculates the average increase of the cumulative request counter.
+
+```promql
+sum(...)
+```
+
+combines results across every running Pod.
+
+This produces a single platform-wide request rate.
+
+---
+
+# Selecting the Visualization
+
+Locate
+
+```
+Visualization
+```
+
+Select
+
+```
+Time Series
+```
+
+Immediately,
+
+Grafana replaces the single Stat value with a historical graph.
+
+This graph updates continuously as Prometheus collects new samples.
+
+---
+
+# Panel Title
+
+Configure
+
+```
+Request Rate Over Time
+```
+
+---
+
+# Standard Options
+
+Configure
+
+Unit
+
+```
+Throughput
+
+↓
+
+Requests/sec
+```
+
+Decimals
+
+```
+2
+```
+
+---
+
+# Graph Options
+
+Configure the following options.
+
+Legend
+
+```
+Auto
+```
+
+Line Width
+
+```
+2
+```
+
+Fill Opacity
+
+```
+20%
+```
+
+Show Points
+
+```
+Auto
+```
+
+Interpolation
+
+```
+Linear
+```
+
+These settings provide a clean visualization while keeping the graph easy to interpret.
+
+---
+
+# Expected Result
+
+During normal application usage,
+
+the graph may appear relatively flat.
+
+Example
+
+```
+18
+
+17
+
+19
+
+18
+
+17
+
+19
+```
+
+During load testing,
+
+the graph should display increasing throughput.
+
+Example
+
+```
+10
+
+18
+
+42
+
+86
+
+115
+
+140
+
+160
+
+145
+
+110
+
+60
+
+18
+```
+
+This clearly illustrates the progression of the load test.
+
+---
+
+# Verification
+
+Generate traffic manually.
+
+Refresh
+
+```
+https://api.dev.dreammyles.online/actuator/health
+```
+
+multiple times.
+
+Observe the graph.
+
+Notice that the line rises briefly before returning to its previous level.
+
+Later,
+
+during Chapter 9,
+
+k6 will generate sustained traffic,
+
+making this graph much more interesting.
+
+---
+
+# Operational Interpretation
+
+This graph should always be interpreted together with:
+
+```
+CPU Usage
+
+↓
+
+Average Response Time
+
+↓
+
+5xx Error Rate
+```
+
+Example
+
+```
+Traffic ↑
+
+CPU ↑
+
+Latency ↑
+
+Error Rate ↑
+```
+
+This sequence strongly suggests that the application is approaching its resource limits.
+
+---
+
+# Troubleshooting
+
+## Panel Displays "No Data"
+
+Verify
+
+```promql
+http_server_requests_seconds_count
+```
+
+Verify
+
+```promql
+up
+```
+
+Confirm
+
+```
+auth-service = 1
+```
+
+If Prometheus is scraping correctly,
+
+the graph should populate automatically.
+
+---
+
+# Real Output During This Project
+
+During implementation,
+
+this panel reused the same PromQL query as the Requests/sec Stat panel.
+
+Rather than creating a new metric,
+
+the visualization was changed from **Stat** to **Time Series**.
+
+This demonstrates an important Grafana concept:
+
+> Different visualizations can represent the same Prometheus metric in different ways depending on the operational question being asked.
+
+The Stat panel answers:
+
+> **How much traffic is the application processing right now?**
+
+The Time Series panel answers:
+
+> **How has traffic changed over time?**
+
+---
+
+# Operational Use Cases
+
+This panel becomes especially valuable during:
+
+- k6 Load Testing
+- Production incidents
+- Traffic spike investigations
+- Capacity planning
+- Autoscaling validation
+- Deployment verification
+
+For example,
+
+during a k6 load test,
+
+the graph should steadily increase as virtual users generate additional requests.
+
+If the graph remains flat,
+
+traffic is not reaching the application.
+
+---
+
+# Interview Talking Points
+
+**Question**
+
+> Why did you create both a Requests/sec Stat panel and a Request Rate Time Series panel?
+
+**Example Response**
+
+> Although both panels use the same PromQL query, they answer different operational questions. The Stat panel provides the current throughput at a glance, making it ideal for dashboards. The Time Series panel provides historical context, allowing engineers to correlate traffic changes with CPU usage, memory utilization, latency, and autoscaling events during troubleshooting.
+
+---
+
+# Lessons Learned During Implementation
+
+One of the key lessons during implementation was understanding that **the visualization is just as important as the metric itself**.
+
+Initially,
+
+the Requests/sec Stat panel appeared sufficient.
+
+However,
+
+once planning began for load testing,
+
+it became clear that engineers needed historical context.
+
+Rather than creating a different metric,
+
+the same PromQL query was reused with a Time Series visualization.
+
+This approach reduced complexity while providing significantly more operational insight.
+
+---
+
+# Summary
+
+The Request Rate Over Time panel is the first historical visualization added to the Enterprise Platform Overview dashboard.
+
+It transforms the dashboard from a collection of current values into a tool capable of explaining how the platform behaves over time.
+
+At this stage, the dashboard now provides:
+
+✓ Current application throughput
+
+✓ Historical request trends
+
+✓ Average response time
+
+✓ Error rate
+
+✓ CPU utilization
+
+✓ Container memory utilization
+
+✓ JVM heap utilization
+
+✓ Running Pods
+
+The next panel extends historical analysis by visualizing CPU utilization over time, allowing engineers to correlate increases in traffic with increases in processor consumption.

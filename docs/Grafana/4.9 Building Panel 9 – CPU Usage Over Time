@@ -1,0 +1,423 @@
+# 4.10 Building Panel 9 – CPU Usage Over Time
+
+---
+
+# Objective
+
+The ninth panel created for the Enterprise Platform Overview dashboard displays CPU utilization over time.
+
+Unlike the CPU Usage Gauge, which displays only the current processor utilization, this panel provides historical visibility into CPU consumption.
+
+Historical CPU utilization allows engineers to correlate processor usage with changes in traffic, application latency, memory utilization, deployments, and autoscaling events.
+
+This panel answers the operational question:
+
+> **How has CPU utilization changed over time?**
+
+---
+
+# Why This Panel Matters
+
+A CPU Gauge provides a snapshot.
+
+For example:
+
+```
+CPU Usage
+
+38%
+```
+
+This tells us the application's current CPU utilization.
+
+However,
+
+it cannot answer:
+
+- Was CPU already high five minutes ago?
+- Did CPU suddenly spike?
+- Has CPU been increasing steadily?
+- Did autoscaling reduce CPU utilization?
+
+A Time Series graph answers these questions.
+
+Historical CPU utilization is one of the most valuable metrics during production troubleshooting.
+
+---
+
+# Navigation
+
+Open Grafana.
+
+Navigate to:
+
+```
+Dashboards
+
+↓
+
+Enterprise Platform Overview
+
+↓
+
+Edit Dashboard
+
+↓
+
+Add
+
+↓
+
+Visualization
+```
+
+Datasource
+
+```
+Prometheus
+```
+
+---
+
+# Switch to Code Mode
+
+If Builder Mode is displayed,
+
+click
+
+```
+Code
+```
+
+---
+
+# PromQL Query
+
+Paste the following query exactly as shown.
+
+```promql
+avg(process_cpu_usage{job="auth-service"})
+```
+
+Click
+
+```
+Run Queries
+```
+
+Notice that this is exactly the same query used for the CPU Usage Gauge.
+
+The only difference is the visualization.
+
+---
+
+# Understanding the Query
+
+The metric
+
+```promql
+process_cpu_usage
+```
+
+is exposed by Micrometer.
+
+It measures the percentage of CPU currently consumed by the Java process.
+
+Using
+
+```promql
+avg(...)
+```
+
+produces the average CPU utilization across all running application Pods.
+
+This ensures that the graph remains accurate as the application scales horizontally.
+
+---
+
+# Selecting the Visualization
+
+Locate
+
+```
+Visualization
+```
+
+Select
+
+```
+Time Series
+```
+
+Grafana immediately replaces the Gauge with a historical graph.
+
+---
+
+# Panel Title
+
+Configure
+
+```
+CPU Usage Over Time
+```
+
+---
+
+# Standard Options
+
+Configure
+
+Unit
+
+```
+Percent (0.0–1.0)
+```
+
+Decimals
+
+```
+2
+```
+
+---
+
+# Graph Configuration
+
+Recommended settings
+
+Legend
+
+```
+Auto
+```
+
+Line Width
+
+```
+2
+```
+
+Fill Opacity
+
+```
+20%
+```
+
+Show Points
+
+```
+Auto
+```
+
+Interpolation
+
+```
+Linear
+```
+
+These settings provide a clear visualization without unnecessary clutter.
+
+---
+
+# Expected Result
+
+During normal application usage
+
+```
+18%
+
+19%
+
+20%
+
+18%
+
+21%
+```
+
+The graph should appear relatively stable.
+
+---
+
+During a load test
+
+```
+15%
+
+25%
+
+38%
+
+54%
+
+71%
+
+63%
+
+48%
+
+29%
+
+18%
+```
+
+The graph should clearly show CPU increasing as request volume increases.
+
+---
+
+# Verification
+
+Generate application traffic.
+
+Refresh
+
+```
+https://api.dev.dreammyles.online/actuator/health
+```
+
+multiple times.
+
+Observe the graph.
+
+During Chapter 9,
+
+execute a k6 load test.
+
+CPU utilization should increase steadily as virtual users begin generating traffic.
+
+---
+
+# Correlating CPU with Other Metrics
+
+This panel should always be viewed together with:
+
+```
+Request Rate
+
+↓
+
+Average Response Time
+
+↓
+
+Running Pods
+```
+
+Example
+
+```
+Request Rate ↑
+
+↓
+
+CPU ↑
+
+↓
+
+HPA Creates New Pods
+
+↓
+
+CPU ↓
+```
+
+This sequence confirms that autoscaling is functioning correctly.
+
+---
+
+# Troubleshooting
+
+## Graph Displays "No Data"
+
+Verify
+
+```promql
+process_cpu_usage
+```
+
+Verify
+
+```promql
+up
+```
+
+Expected
+
+```
+auth-service = 1
+```
+
+If the metric exists,
+
+the graph should populate automatically.
+
+---
+
+# Real Output During This Project
+
+During implementation,
+
+this panel reused the same PromQL query as the CPU Usage Gauge.
+
+Rather than creating a second metric,
+
+only the visualization was changed.
+
+This demonstrates another important Grafana principle:
+
+> One Prometheus metric can answer multiple operational questions simply by changing the visualization.
+
+---
+
+# Operational Use Cases
+
+This panel is especially useful during:
+
+- Load testing
+- Autoscaling validation
+- Production incidents
+- Performance tuning
+- Deployment verification
+- Capacity planning
+
+CPU trends should always be interpreted together with traffic trends.
+
+High CPU without increased traffic may indicate an inefficient application.
+
+---
+
+# Interview Talking Points
+
+**Question**
+
+> Why did you build both a CPU Gauge and a CPU Time Series graph?
+
+**Example Response**
+
+> The Gauge provides the current CPU utilization, making it ideal for quickly assessing platform health. The Time Series graph provides historical context, allowing engineers to determine when CPU utilization increased, whether it correlates with increased traffic, and whether autoscaling successfully reduced processor utilization. Both panels use the same PromQL query but answer different operational questions.
+
+---
+
+# Lessons Learned During Implementation
+
+Initially,
+
+the CPU Gauge appeared sufficient.
+
+However,
+
+while planning the load-testing phase,
+
+it became clear that understanding historical CPU behavior would be essential.
+
+The Time Series graph provides that historical context without introducing additional Prometheus metrics.
+
+---
+
+# Summary
+
+The CPU Usage Over Time panel extends the Enterprise Platform Overview dashboard by introducing historical CPU analysis.
+
+Combined with the Request Rate graph, engineers can now correlate traffic volume with processor utilization and determine whether CPU consumption behaves as expected during normal operation and under load.
+
+The next panel completes the historical resource analysis by visualizing JVM Heap utilization over time.

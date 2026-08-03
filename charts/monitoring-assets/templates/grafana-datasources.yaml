@@ -6,7 +6,7 @@ kind: ConfigMap
 
 metadata:
 
-  name: {{ base $path | trimSuffix ".yaml" }}
+  name: grafana-datasource-{{ base $path | trimSuffix ".yaml" | lower }}
 
   namespace: monitoring
 

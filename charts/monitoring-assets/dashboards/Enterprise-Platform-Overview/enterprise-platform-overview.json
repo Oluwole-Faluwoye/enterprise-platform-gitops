@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Production monitoring dashboard for the Enterprise Platform   (---). Displays application health, Kubernetes resource utilization, autoscaling, JVM metrics, HTTP performance, and logs from Grafana, Prometheus, and Loki.",
+  "description": "Production monitoring dashboard for the Enterprise Platform. Displays application health, Kubernetes resource utilization, autoscaling, JVM metrics, HTTP performance, and logs from Grafana, Prometheus, and Loki.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -845,7 +845,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Enterprise Platform Overview",
+  "title": "Enterprise Platform Overview Test",
   "uid": "eb565b3c-f0c6-462a-8417-8e11bbbdf384",
   "version": 18
 }

@@ -1,5 +1,8 @@
 grafana:
   enabled: true
+
+  deploymentStrategy:
+    type: Recreate
   ingress:
     enabled: true
     ingressClassName: alb

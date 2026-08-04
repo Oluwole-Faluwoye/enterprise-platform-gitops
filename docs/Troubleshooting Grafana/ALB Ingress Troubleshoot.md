@@ -53,12 +53,14 @@ Modified the Jenkins pipeline to automatically update every chart containing:
 alb.ingress.kubernetes.io/certificate-arn
 The existing ArgoCD Application became stuck in reconciliation.
 
+-----------------------------------------------------------------------------------
 To recover it:
 
 kubectl delete application prometheus-stack \
 -n argocd \
 --cascade=orphan
 
+-------------------------------------------------------------------------------------
 ArgoCD automatically recreated the Application from Git.
 
 The recreated Application generated a fresh Ingress using the correct ACM certificate.
@@ -76,3 +78,29 @@ Events:
 Successfully reconciled
 
 
+----------------------------------------------------------------------------------1. Create the file
+mkdir -p scripts
+nano scripts/diagnose-ingress.sh
+
+or if you're using VS Code, simply create:
+
+scripts/diagnose-ingress.sh
+
+Paste the script into it.
+
+2. Make it executable
+chmod +x scripts/diagnose-ingress.sh
+
+You only need to do this once.
+
+3. Run it
+
+From the root of your project:
+
+./scripts/diagnose-ingress.sh
+
+or
+
+bash scripts/diagnose-ingress.sh
+
+Both commands do the same thing.

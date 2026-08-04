@@ -63,6 +63,7 @@ grafana:
             path: /var/lib/grafana/dashboards
   plugins:
     - grafana-piechart-panel
+  
   additionalDataSources:
     - name: Loki
       type: loki
@@ -72,6 +73,17 @@ grafana:
       isDefault: false
       jsonData:
         maxLines: 1000
+
+
+    - name: Alertmanager
+      type: alertmanager
+      access: proxy
+      url: http://prometheus-stack-kube-prom-alertmanager.monitoring.svc.cluster.local:9093
+      editable: true
+      jsonData:
+        implementation: prometheus
+
+        
 ################################################################################
 # Prometheus
 ################################################################################

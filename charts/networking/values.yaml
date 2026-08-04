@@ -19,7 +19,7 @@ alb:
   groupName: enterprise-platform
   scheme: internet-facing
   targetType: ip
-  certificateArn: "arn:aws:acm:us-east-1:761018849945:certificate/aab0fedc-d297-4cc0-942a-f9076bbc1567"
+  certificateArn: "arn:aws:acm:us-east-1:761018849945:certificate/34825b11-fc08-4d5e-ad45-9b0a0ca323f0"
 # =========================================================
 # HOSTS
 # =========================================================

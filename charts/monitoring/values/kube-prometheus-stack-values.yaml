@@ -74,15 +74,6 @@ grafana:
       jsonData:
         maxLines: 1000
 
-
-    - name: Alertmanager
-      type: alertmanager
-      access: proxy
-      url: http://prometheus-stack-kube-prom-alertmanager.monitoring.svc.cluster.local:9093
-      editable: true
-      jsonData:
-        implementation: prometheus
-
         
 ################################################################################
 # Prometheus

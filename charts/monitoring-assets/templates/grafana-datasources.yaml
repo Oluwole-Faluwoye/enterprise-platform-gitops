@@ -9,5 +9,5 @@ metadata:
     grafana_datasource: "1"
 
 data:
-  datasource.yaml: |
+  enterprise-datasources.yaml: |
 {{ .Files.Get "grafana/datasources/datasources.yaml" | indent 4 }}

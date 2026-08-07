@@ -1,0 +1,80 @@
+groups:
+  - name: kubernetes-applications
+
+    rules:
+
+      #################################################
+      # Pod CrashLoop
+      #################################################
+
+      - alert: PodCrashLooping
+        expr: |
+          increase(kube_pod_container_status_restarts_total[10m]) > 3
+        for: 5m
+        labels:
+          severity: critical
+          category: application
+          team: platform
+        annotations:
+          summary: "Pod CrashLooping"
+          description: |
+            Pod {{ $labels.namespace }}/{{ $labels.pod }}
+            has restarted more than three times in the last 10 minutes.
+
+      #################################################
+      # Pod Restarting
+      #################################################
+
+      - alert: PodRestartingFrequently
+        expr: |
+          increase(kube_pod_container_status_restarts_total[30m]) > 5
+        for: 10m
+        labels:
+          severity: warning
+          category: application
+          team: platform
+        annotations:
+          summary: "Frequent Pod Restarts"
+          description: |
+            Pod {{ $labels.namespace }}/{{ $labels.pod }}
+            has restarted frequently.
+
+      #################################################
+      # Deployment Unavailable
+      #################################################
+
+      - alert: DeploymentUnavailable
+        expr: |
+          kube_deployment_status_replicas_available
+          <
+          kube_deployment_spec_replicas
+        for: 10m
+        labels:
+          severity: critical
+          category: application
+          team: platform
+        annotations:
+          summary: "Deployment Unavailable"
+          description: |
+            Deployment {{ $labels.namespace }}/{{ $labels.deployment }}
+            does not have the desired number of replicas.
+
+      #################################################
+      # Deployment Replica Mismatch
+      #################################################
+
+      - alert: DeploymentReplicasMismatch
+        expr: |
+          kube_deployment_status_replicas_updated
+          !=
+          kube_deployment_status_replicas
+        for: 15m
+        labels:
+          severity: warning
+          category: application
+          team: platform
+        annotations:
+          summary: "Deployment Replica Mismatch"
+          description: |
+            Deployment {{ $labels.namespace }}/{{ $labels.deployment }}
+            has not completed rollout successfully.

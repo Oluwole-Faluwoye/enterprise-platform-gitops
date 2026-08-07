@@ -16,3 +16,36 @@ prometheus:
 
   rules:
     enabled: true
+
+####################################
+# Global Settings
+####################################
+
+global:
+  environment: dev
+
+####################################
+# Alert Defaults
+####################################
+
+alerts:
+  enabled: true
+
+  defaults:
+    duration: 5m
+    team: platform
+
+####################################
+# Notification Settings
+####################################
+
+notifications:
+  email:
+    enabled: false
+    receiver: platform-team
+
+  slack:
+    enabled: false
+
+  teams:
+    enabled: false

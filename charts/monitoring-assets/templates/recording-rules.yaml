@@ -1,6 +1,4 @@
-{{- if .Values.prometheus.rules.enabled }}
-
-{{- range $path, $_ := .Files.Glob "alerts/*.yaml" }}
+{{- range $path, $_ := .Files.Glob "recording-rules/*.yaml" }}
 
 {{- $content := $.Files.Get $path }}
 
@@ -10,20 +8,17 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ include "monitoring-assets.fullname" $ }}-{{ base $path | trimSuffix ".yaml" | lower }}
+  name: {{ include "monitoring-assets.fullname" $ }}-recording-{{ base $path | trimSuffix ".yaml" | lower }}
   namespace: {{ include "monitoring-assets.namespace" $ }}
 
   labels:
 {{ include "monitoring-assets.labels" $ | indent 4 }}
-
-    app.kubernetes.io/component: prometheus-rules
+    app.kubernetes.io/component: recording-rules
 
 spec:
 {{ $content | indent 2 }}
 
 ---
-
-{{- end }}
 
 {{- end }}
 

@@ -1,0 +1,64 @@
+groups:
+
+  - name: node-recording-rules
+
+    interval: 30s
+
+    rules:
+
+      #################################################
+      # CPU Usage Per Node
+      #################################################
+
+      - record: node:cpu_usage
+        expr: |
+          1 -
+          avg by (instance) (
+            rate(node_cpu_seconds_total{mode="idle"}[5m])
+          )
+
+      #################################################
+      # Memory Usage Per Node
+      #################################################
+
+      - record: node:memory_usage
+        expr: |
+          1 -
+          (
+            node_memory_MemAvailable_bytes
+            /
+            node_memory_MemTotal_bytes
+          )
+
+      #################################################
+      # Filesystem Usage
+      #################################################
+
+      - record: node:filesystem_usage
+        expr: |
+          1 -
+          (
+            node_filesystem_avail_bytes{fstype!="tmpfs"}
+            /
+            node_filesystem_size_bytes{fstype!="tmpfs"}
+          )
+
+      #################################################
+      # Network Receive
+      #################################################
+
+      - record: node:network_receive_bytes
+        expr: |
+          sum by (instance) (
+            rate(node_network_receive_bytes_total[5m])
+          )
+
+      #################################################
+      # Network Transmit
+      #################################################
+
+      - record: node:network_transmit_bytes
+        expr: |
+          sum by (instance) (
+            rate(node_network_transmit_bytes_total[5m])
+          )

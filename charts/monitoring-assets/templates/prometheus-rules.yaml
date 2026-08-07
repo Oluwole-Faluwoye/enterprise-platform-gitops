@@ -1,0 +1,22 @@
+{{- range $path, $_ := .Files.Glob "alerts/*.yaml" }}
+
+{{- $content := $.Files.Get $path }}
+
+{{- if trim $content }}
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: monitoring-{{ base $path | trimSuffix ".yaml" | lower }}
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: monitoring-assets
+    app.kubernetes.io/component: prometheus-rules
+
+spec:
+{{ $content | indent 2 }}
+
+---
+{{- end }}
+
+{{- end }}

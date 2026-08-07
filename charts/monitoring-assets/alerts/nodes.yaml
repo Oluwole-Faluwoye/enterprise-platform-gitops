@@ -1,0 +1,91 @@
+groups:
+  - name: kubernetes-nodes
+
+    rules:
+
+      #################################################
+      # Node Ready
+      #################################################
+
+      - alert: NodeNotReady
+        expr: |
+          kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+          team: platform
+        annotations:
+          summary: "Node Not Ready"
+          description: |
+            Kubernetes node {{ $labels.node }} has not been Ready
+            for more than 5 minutes.
+          runbook_url: https://kubernetes.io/docs/concepts/architecture/nodes/
+
+      #################################################
+      # Memory Pressure
+      #################################################
+
+      - alert: NodeMemoryPressure
+        expr: |
+          kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+          team: platform
+        annotations:
+          summary: "Node Memory Pressure"
+          description: |
+            Node {{ $labels.node }} is reporting MemoryPressure.
+
+      #################################################
+      # Disk Pressure
+      #################################################
+
+      - alert: NodeDiskPressure
+        expr: |
+          kube_node_status_condition{condition="DiskPressure",status="true"} == 1
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+          team: platform
+        annotations:
+          summary: "Node Disk Pressure"
+          description: |
+            Node {{ $labels.node }} is reporting DiskPressure.
+
+      #################################################
+      # PID Pressure
+      #################################################
+
+      - alert: NodePIDPressure
+        expr: |
+          kube_node_status_condition{condition="PIDPressure",status="true"} == 1
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+          team: platform
+        annotations:
+          summary: "Node PID Pressure"
+          description: |
+            Node {{ $labels.node }} is running out of process IDs.
+
+      #################################################
+      # Network Unavailable
+      #################################################
+
+      - alert: NodeNetworkUnavailable
+        expr: |
+          kube_node_status_condition{condition="NetworkUnavailable",status="true"} == 1
+        for: 5m
+        labels:
+          severity: critical
+          category: networking
+          team: platform
+        annotations:
+          summary: "Node Network Unavailable"
+          description: |
+            Kubernetes node {{ $labels.node }} has no network connectivity.

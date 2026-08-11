@@ -27,7 +27,7 @@ groups:
 
       - alert: PodRestartingFrequently
         expr: |
-          increase(kube_pod_container_status_restarts_total[30m]) > 5
+          pod:restart_rate > 5
         for: 10m
         labels:
           severity: warning
@@ -45,9 +45,7 @@ groups:
 
       - alert: DeploymentUnavailable
         expr: |
-          kube_deployment_status_replicas_available
-          <
-          kube_deployment_spec_replicas
+          deployment:availability < 1
         for: 10m
         labels:
           severity: critical
@@ -65,9 +63,7 @@ groups:
 
       - alert: DeploymentReplicasMismatch
         expr: |
-          kube_deployment_status_replicas_updated
-          !=
-          kube_deployment_status_replicas
+          deployment:replica_ratio < 1
         for: 15m
         labels:
           severity: warning

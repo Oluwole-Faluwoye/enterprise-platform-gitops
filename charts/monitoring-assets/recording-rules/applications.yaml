@@ -1,0 +1,63 @@
+groups:
+
+  - name: application-recording-rules
+
+    interval: 30s
+
+    rules:
+
+      #################################################
+      # Deployment Availability
+      #################################################
+
+      - record: deployment:availability
+        expr: |
+          kube_deployment_status_replicas_available
+          /
+          kube_deployment_spec_replicas
+
+      #################################################
+      # Deployment Replica Ratio
+      #################################################
+
+      - record: deployment:replica_ratio
+        expr: |
+          kube_deployment_status_replicas_updated
+          /
+          kube_deployment_spec_replicas
+
+      #################################################
+      # Namespace CPU Usage
+      #################################################
+
+      - record: namespace:cpu_usage
+        expr: |
+          sum by (namespace)(
+            rate(container_cpu_usage_seconds_total{
+              container!="",
+              image!=""
+            }[5m])
+          )
+
+      #################################################
+      # Namespace Memory Usage
+      #################################################
+
+      - record: namespace:memory_usage
+        expr: |
+          sum by (namespace)(
+            container_memory_working_set_bytes{
+              container!="",
+              image!=""
+            }
+          )
+
+      #################################################
+      # Pod Restart Rate
+      #################################################
+
+      - record: pod:restart_rate
+        expr: |
+          increase(
+            kube_pod_container_status_restarts_total[30m]
+          )

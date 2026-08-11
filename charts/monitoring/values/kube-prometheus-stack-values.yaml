@@ -87,9 +87,57 @@ prometheus:
 ################################################################################
 alertmanager:
   enabled: true
+  namespaceOverride: monitoring
+
   alertmanagerSpec:
     replicas: 1
     retention: 120h
+
+    configSecret: alertmanager-config
+
+    secrets:
+      - alertmanager-secret
+
+    configMaps:
+      - alertmanager-templates
+
+    containers:
+      - name: alertmanager
+        env:
+          - name: SMTP_HOST
+            valueFrom:
+              secretKeyRef:
+                name: alertmanager-secret
+                key: smtp-host
+
+          - name: SMTP_PORT
+            valueFrom:
+              secretKeyRef:
+                name: alertmanager-secret
+                key: smtp-port
+
+          - name: SMTP_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: alertmanager-secret
+                key: smtp-username
+
+          - name: SMTP_FROM
+            valueFrom:
+              secretKeyRef:
+                name: alertmanager-secret
+                key: smtp-from
+
+          - name: SMTP_TO
+            valueFrom:
+              secretKeyRef:
+                name: alertmanager-secret
+                key: smtp-to
+
+    additionalArgs:
+      - name: config.expand-env
+        value: "true"
+
     resources:
       requests:
         cpu: 100m
@@ -97,6 +145,7 @@ alertmanager:
       limits:
         cpu: 500m
         memory: 512Mi
+
     storage:
       volumeClaimTemplate:
         spec:

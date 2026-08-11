@@ -1,7 +1,5 @@
 groups:
-
   - name: cluster-recording-rules
-
     interval: 30s
 
     rules:

@@ -1,27 +1,42 @@
 {{ define "email.subject" }}
-
-[{{ .Status | toUpper }}]
-
-{{ .CommonLabels.alertname }}
-
+[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}
 {{ end }}
 
 {{ define "email.body" }}
 
 Alert Name:
-
 {{ .CommonLabels.alertname }}
 
-Severity:
+Status:
+{{ .Status }}
 
+Severity:
 {{ .CommonLabels.severity }}
 
-Summary:
+Environment:
+{{ .CommonLabels.environment }}
 
+Namespace:
+{{ .CommonLabels.namespace }}
+
+Team:
+{{ .CommonLabels.team }}
+
+Summary:
 {{ .CommonAnnotations.summary }}
 
 Description:
-
 {{ .CommonAnnotations.description }}
+
+Runbook:
+{{ .CommonAnnotations.runbook_url }}
+
+Started:
+{{ .StartsAt }}
+
+{{ if eq .Status "resolved" }}
+Resolved:
+{{ .EndsAt }}
+{{ end }}
 
 {{ end }}

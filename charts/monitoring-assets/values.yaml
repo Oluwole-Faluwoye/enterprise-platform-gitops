@@ -17,6 +17,11 @@ prometheus:
   rules:
     enabled: true
 
+alertmanager:
+  smtp:
+    host: smtp-relay.brevo.com
+    port: 587
+
 ####################################
 # Global Settings
 ####################################

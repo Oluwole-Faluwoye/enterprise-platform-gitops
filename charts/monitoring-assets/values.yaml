@@ -21,6 +21,9 @@ alertmanager:
   smtp:
     host: smtp-relay.brevo.com
     port: 587
+    username: b51a23001@smtp-brevo.com
+    from: alerts@ledgari.com
+    to: faluwoyeo@yahoo.com
 
 ####################################
 # Global Settings

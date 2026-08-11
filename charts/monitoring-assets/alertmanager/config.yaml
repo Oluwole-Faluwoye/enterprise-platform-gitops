@@ -34,10 +34,10 @@ receivers:
 
   - name: platform-email
     email_configs:
-      - to: "${SMTP_TO}"
-        from: "${SMTP_FROM}"
-        smarthost: "${SMTP_HOST}:${SMTP_PORT}"
-        auth_username: "${SMTP_USERNAME}"
+      - to: "{{ .Values.alertmanager.smtp.to }}"
+        from: "{{ .Values.alertmanager.smtp.from }}"
+        smarthost: "{{ .Values.alertmanager.smtp.host }}:{{ .Values.alertmanager.smtp.port }}"
+        auth_username: "{{ .Values.alertmanager.smtp.username }}"
         auth_password_file: "/etc/alertmanager/secrets/alertmanager-secret/smtp-password"
         require_tls: true
         send_resolved: true

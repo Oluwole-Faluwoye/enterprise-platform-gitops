@@ -31,12 +31,14 @@ Description:
 Runbook:
 {{ .CommonAnnotations.runbook_url }}
 
+{{ range .Alerts }}
 Started:
 {{ .StartsAt }}
 
-{{ if eq .Status "resolved" }}
+{{ if eq $.Status "resolved" }}
 Resolved:
 {{ .EndsAt }}
+{{ end }}
 {{ end }}
 
 {{ end }}

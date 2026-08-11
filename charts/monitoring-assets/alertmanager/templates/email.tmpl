@@ -1,20 +1,37 @@
 {{ define "email.subject" }}
-[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}
+[{{ .CommonLabels.severity | toUpper }}][{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} | {{ .CommonLabels.environment }} | {{ .CommonLabels.namespace }}
 {{ end }}
 
 {{ define "email.body" }}
 
-Alert Name:
+============================================================
+ENTERPRISE PLATFORM - ALERT NOTIFICATION
+============================================================
+
+{{ if eq .Status "firing" -}}
+🚨 ALERT FIRING
+{{- else -}}
+✅ ALERT RESOLVED
+{{- end }}
+
+Alert:
 {{ .CommonLabels.alertname }}
 
 Status:
-{{ .Status }}
+{{ .Status | toUpper }}
 
 Severity:
-{{ .CommonLabels.severity }}
+{{ .CommonLabels.severity | toUpper }}
+
+------------------------------------------------------------
+ENVIRONMENT
+------------------------------------------------------------
 
 Environment:
 {{ .CommonLabels.environment }}
+
+Cluster:
+{{ .CommonLabels.cluster }}
 
 Namespace:
 {{ .CommonLabels.namespace }}
@@ -22,23 +39,62 @@ Namespace:
 Team:
 {{ .CommonLabels.team }}
 
+------------------------------------------------------------
+ALERT DETAILS
+------------------------------------------------------------
+
 Summary:
 {{ .CommonAnnotations.summary }}
 
 Description:
 {{ .CommonAnnotations.description }}
 
-Runbook:
-{{ .CommonAnnotations.runbook_url }}
-
 {{ range .Alerts }}
+
+------------------------------------------------------------
+ALERT INSTANCE
+------------------------------------------------------------
+
 Started:
 {{ .StartsAt }}
 
-{{ if eq $.Status "resolved" }}
+{{ if not .EndsAt.IsZero }}
 Resolved:
 {{ .EndsAt }}
 {{ end }}
+
+Labels:
+{{ range $key, $value := .Labels }}
+  {{ $key }} = {{ $value }}
 {{ end }}
+
+{{ end }}
+
+------------------------------------------------------------
+RUNBOOK
+------------------------------------------------------------
+
+{{ if .CommonAnnotations.runbook_url }}
+{{ .CommonAnnotations.runbook_url }}
+{{ else }}
+No runbook configured for this alert.
+{{ end }}
+
+------------------------------------------------------------
+ALERTMANAGER
+------------------------------------------------------------
+
+Enterprise Platform Monitoring
+Alertmanager
+
+{{ if eq .Status "firing" }}
+Action may be required. Please investigate the affected resource.
+{{ else }}
+The alert condition has recovered.
+{{ end }}
+
+============================================================
+This is an automated notification. Please do not reply.
+============================================================
 
 {{ end }}

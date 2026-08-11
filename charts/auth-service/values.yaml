@@ -59,7 +59,7 @@ ingress:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018849945:certificate/34825b11-fc08-4d5e-ad45-9b0a0ca323f0
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018849945:certificate/4a65bfaf-a065-416b-9606-ed6f6e09d4ec
   hosts:
     - host: api.dev.dreammyles.online
       paths:

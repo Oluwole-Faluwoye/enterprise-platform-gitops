@@ -1,6 +1,5 @@
 grafana:
   enabled: true
-
   deploymentStrategy:
     type: Recreate
   ingress:
@@ -12,7 +11,7 @@ grafana:
       alb.ingress.kubernetes.io/target-type: ip
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
       alb.ingress.kubernetes.io/ssl-redirect: "443"
-      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018849945:certificate/34825b11-fc08-4d5e-ad45-9b0a0ca323f0
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018849945:certificate/4a65bfaf-a065-416b-9606-ed6f6e09d4ec
     hosts:
       - grafana.dev.dreammyles.online
     path: /
@@ -51,10 +50,8 @@ grafana:
       defaultDatasourceEnabled: false
       label: grafana_datasource
       labelValue: "1"
-  
   plugins:
     - grafana-piechart-panel
-        
 ################################################################################
 # Prometheus
 ################################################################################
@@ -88,19 +85,14 @@ prometheus:
 alertmanager:
   enabled: true
   namespaceOverride: monitoring
-
   alertmanagerSpec:
     replicas: 1
     retention: 120h
-
     configSecret: alertmanager-config
-
     secrets:
       - alertmanager-secret
-
     configMaps:
       - alertmanager-templates
-
     containers:
       - name: alertmanager
         env:
@@ -109,35 +101,29 @@ alertmanager:
               secretKeyRef:
                 name: alertmanager-secret
                 key: smtp-host
-
           - name: SMTP_PORT
             valueFrom:
               secretKeyRef:
                 name: alertmanager-secret
                 key: smtp-port
-
           - name: SMTP_USERNAME
             valueFrom:
               secretKeyRef:
                 name: alertmanager-secret
                 key: smtp-username
-
           - name: SMTP_FROM
             valueFrom:
               secretKeyRef:
                 name: alertmanager-secret
                 key: smtp-from
-
           - name: SMTP_TO
             valueFrom:
               secretKeyRef:
                 name: alertmanager-secret
                 key: smtp-to
-
     additionalArgs:
       - name: config.expand-env
         value: "true"
-
     resources:
       requests:
         cpu: 100m
@@ -145,7 +131,6 @@ alertmanager:
       limits:
         cpu: 500m
         memory: 512Mi
-
     storage:
       volumeClaimTemplate:
         spec:

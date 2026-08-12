@@ -12,3 +12,6 @@ metadata:
 data:
   email.tmpl: |
 {{ .Files.Get "alertmanager/templates/email.tmpl" | indent 4 }}
+
+  email.html: |
+{{ .Files.Get "alertmanager/templates/email.html" | indent 4 }}

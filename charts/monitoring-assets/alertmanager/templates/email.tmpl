@@ -1,5 +1,9 @@
 {{ define "email.subject" }}
-[{{ .CommonLabels.severity | toUpper }}][{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} | {{ .CommonLabels.environment }} | {{ .CommonLabels.namespace }}
+{{ if eq .Status "firing" -}}
+🚨 [{{ .CommonLabels.severity | toUpper }}] {{ .CommonLabels.alertname }} — {{ .CommonLabels.environment }} / {{ .CommonLabels.namespace }}
+{{- else -}}
+✅ [{{ .CommonLabels.severity | toUpper }}] {{ .CommonLabels.alertname }} — {{ .CommonLabels.environment }} / {{ .CommonLabels.namespace }}
+{{- end }}
 {{ end }}
 
 {{ define "email.body" }}

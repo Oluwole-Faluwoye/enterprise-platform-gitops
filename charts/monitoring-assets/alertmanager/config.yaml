@@ -46,6 +46,7 @@ receivers:
           Subject: '{{ "{{ template \"email.subject\" . }}" }}'
 
         text: '{{ "{{ template \"email.body\" . }}" }}'
+        html: '{{ "{{ template \"email.html\" . }}" }}'
 
 inhibit_rules:
   - source_matchers:

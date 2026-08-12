@@ -23,7 +23,6 @@ Status:
 Severity:
 {{ .CommonLabels.severity | toUpper }}
 
-
 ------------------------------------------------------------
 ENVIRONMENT
 ------------------------------------------------------------
@@ -40,7 +39,6 @@ Namespace:
 Team:
 {{ .CommonLabels.team }}
 
-
 ------------------------------------------------------------
 ALERT DETAILS
 ------------------------------------------------------------
@@ -50,7 +48,6 @@ Summary:
 
 Description:
 {{ .CommonAnnotations.description }}
-
 
 {{ range .Alerts }}
 ------------------------------------------------------------
@@ -81,7 +78,6 @@ RUNBOOK
 {{ else }}
 No runbook configured for this alert.
 {{ end }}
-
 
 ------------------------------------------------------------
 ALERTMANAGER

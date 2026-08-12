@@ -1,0 +1,247 @@
+{{ define "email.html" }}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alertmanager Notification</title>
+</head>
+
+<body style="margin:0; padding:0; background:#f4f6f8; font-family:Arial,Helvetica,sans-serif; color:#1f2937;">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f6f8; padding:30px 15px;">
+<tr>
+<td align="center">
+
+<table width="680" cellpadding="0" cellspacing="0" border="0"
+       style="max-width:680px; width:100%; background:#ffffff; border-radius:10px; overflow:hidden;">
+
+  <!-- Header -->
+  <tr>
+    <td style="padding:24px 30px; background:#111827; color:#ffffff;">
+      <div style="font-size:22px; font-weight:bold;">
+        Enterprise Platform
+      </div>
+      <div style="font-size:13px; margin-top:5px; color:#d1d5db;">
+        Monitoring &amp; Alerting
+      </div>
+    </td>
+  </tr>
+
+  <!-- Status -->
+  <tr>
+    <td style="padding:25px 30px;">
+
+      {{ if eq .Status "firing" }}
+      <div style="display:inline-block; padding:8px 14px; background:#fee2e2; color:#b91c1c; border-radius:6px; font-size:13px; font-weight:bold;">
+        ALERT FIRING
+      </div>
+      {{ else }}
+      <div style="display:inline-block; padding:8px 14px; background:#dcfce7; color:#15803d; border-radius:6px; font-size:13px; font-weight:bold;">
+        ALERT RESOLVED
+      </div>
+      {{ end }}
+
+      <h1 style="font-size:24px; margin:16px 0 6px 0; color:#111827;">
+        {{ .CommonLabels.alertname }}
+      </h1>
+
+      <div style="font-size:14px; color:#6b7280;">
+        {{ .CommonLabels.environment }} &nbsp;|&nbsp;
+        {{ .CommonLabels.namespace }}
+      </div>
+
+    </td>
+  </tr>
+
+  <!-- Summary -->
+  <tr>
+    <td style="padding:0 30px 25px 30px;">
+
+      <table width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px;">
+
+        <tr>
+          <td style="padding:18px 20px;">
+
+            <div style="font-size:12px; font-weight:bold; color:#6b7280; text-transform:uppercase;">
+              Summary
+            </div>
+
+            <div style="font-size:16px; margin-top:7px; color:#111827;">
+              {{ .CommonAnnotations.summary }}
+            </div>
+
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+
+  <!-- Environment -->
+  <tr>
+    <td style="padding:0 30px 25px 30px;">
+
+      <h2 style="font-size:16px; margin:0 0 12px 0; color:#111827;">
+        Environment
+      </h2>
+
+      <table width="100%" cellpadding="8" cellspacing="0" border="0"
+             style="font-size:14px;">
+
+        <tr>
+          <td width="35%" style="color:#6b7280;">Environment</td>
+          <td style="font-weight:bold;">{{ .CommonLabels.environment }}</td>
+        </tr>
+
+        <tr>
+          <td style="color:#6b7280;">Cluster</td>
+          <td style="font-weight:bold;">{{ .CommonLabels.cluster }}</td>
+        </tr>
+
+        <tr>
+          <td style="color:#6b7280;">Namespace</td>
+          <td style="font-weight:bold;">{{ .CommonLabels.namespace }}</td>
+        </tr>
+
+        <tr>
+          <td style="color:#6b7280;">Severity</td>
+          <td style="font-weight:bold;">{{ .CommonLabels.severity | toUpper }}</td>
+        </tr>
+
+        <tr>
+          <td style="color:#6b7280;">Team</td>
+          <td style="font-weight:bold;">{{ .CommonLabels.team }}</td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+
+  <!-- Description -->
+  <tr>
+    <td style="padding:0 30px 25px 30px;">
+
+      <h2 style="font-size:16px; margin:0 0 12px 0; color:#111827;">
+        Alert Details
+      </h2>
+
+      <div style="font-size:14px; line-height:1.6; color:#374151;">
+        {{ .CommonAnnotations.description }}
+      </div>
+
+    </td>
+  </tr>
+
+  <!-- Alert instances -->
+  {{ range .Alerts }}
+
+  <tr>
+    <td style="padding:0 30px 25px 30px;">
+
+      <table width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="border:1px solid #e5e7eb; border-radius:8px;">
+
+        <tr>
+          <td style="padding:18px 20px;">
+
+            <h2 style="font-size:16px; margin:0 0 15px 0; color:#111827;">
+              Alert Instance
+            </h2>
+
+            <table width="100%" cellpadding="7" cellspacing="0" border="0"
+                   style="font-size:14px;">
+
+              <tr>
+                <td width="35%" style="color:#6b7280;">Started</td>
+                <td>{{ .StartsAt }}</td>
+              </tr>
+
+              {{ if not .EndsAt.IsZero }}
+              <tr>
+                <td style="color:#6b7280;">Resolved</td>
+                <td>{{ .EndsAt }}</td>
+              </tr>
+              {{ end }}
+
+            </table>
+
+            <div style="margin-top:15px; font-size:12px; color:#6b7280;">
+              <strong>Labels</strong>
+            </div>
+
+            <div style="margin-top:7px; font-size:12px; line-height:1.6;">
+              {{ range $key, $value := .Labels }}
+              <div>
+                <strong>{{ $key }}</strong> = {{ $value }}
+              </div>
+              {{ end }}
+            </div>
+
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+
+  {{ end }}
+
+  <!-- Runbook -->
+  <tr>
+    <td style="padding:0 30px 30px 30px;">
+
+      <h2 style="font-size:16px; margin:0 0 12px 0; color:#111827;">
+        Runbook
+      </h2>
+
+      {{ if .CommonAnnotations.runbook_url }}
+
+      <a href="{{ .CommonAnnotations.runbook_url }}"
+         style="display:inline-block; padding:10px 16px; background:#2563eb; color:#ffffff; text-decoration:none; border-radius:6px; font-size:13px; font-weight:bold;">
+        View Runbook
+      </a>
+
+      {{ else }}
+
+      <div style="font-size:13px; color:#6b7280;">
+        No runbook configured for this alert.
+      </div>
+
+      {{ end }}
+
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style="padding:20px 30px; background:#f9fafb; border-top:1px solid #e5e7eb;">
+
+      <div style="font-size:13px; font-weight:bold; color:#374151;">
+        Enterprise Platform Monitoring
+      </div>
+
+      <div style="font-size:12px; margin-top:5px; color:#6b7280;">
+        Alertmanager
+      </div>
+
+      <div style="font-size:11px; margin-top:15px; color:#9ca3af;">
+        This notification was generated automatically by the Enterprise Platform monitoring system.
+      </div>
+
+    </td>
+  </tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
+{{ end }}

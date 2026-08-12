@@ -9,9 +9,9 @@ ENTERPRISE PLATFORM - ALERT NOTIFICATION
 ============================================================
 
 {{ if eq .Status "firing" -}}
-🚨 ALERT FIRING
+ALERT FIRING
 {{- else -}}
-✅ ALERT RESOLVED
+ALERT RESOLVED
 {{- end }}
 
 Alert:
@@ -22,6 +22,7 @@ Status:
 
 Severity:
 {{ .CommonLabels.severity | toUpper }}
+
 
 ------------------------------------------------------------
 ENVIRONMENT
@@ -39,6 +40,7 @@ Namespace:
 Team:
 {{ .CommonLabels.team }}
 
+
 ------------------------------------------------------------
 ALERT DETAILS
 ------------------------------------------------------------
@@ -49,8 +51,8 @@ Summary:
 Description:
 {{ .CommonAnnotations.description }}
 
-{{ range .Alerts }}
 
+{{ range .Alerts }}
 ------------------------------------------------------------
 ALERT INSTANCE
 ------------------------------------------------------------
@@ -80,6 +82,7 @@ RUNBOOK
 No runbook configured for this alert.
 {{ end }}
 
+
 ------------------------------------------------------------
 ALERTMANAGER
 ------------------------------------------------------------
@@ -94,7 +97,8 @@ The alert condition has recovered.
 {{ end }}
 
 ============================================================
-This is an automated notification. Please do not reply.
+This notification was generated automatically by the
+Enterprise Platform monitoring system.
 ============================================================
 
 {{ end }}

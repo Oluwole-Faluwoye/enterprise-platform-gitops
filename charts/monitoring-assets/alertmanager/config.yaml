@@ -3,6 +3,7 @@ global:
 
 templates:
   - "/etc/alertmanager/configmaps/alertmanager-templates/*.tmpl"
+  - "/etc/alertmanager/configmaps/alertmanager-templates/email.html"
 
 route:
   receiver: default

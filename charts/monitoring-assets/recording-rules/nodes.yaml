@@ -62,3 +62,43 @@ groups:
           sum by (instance) (
             rate(node_network_transmit_bytes_total[5m])
           )
+
+      #################################################
+      # Network Receive Errors
+      #################################################
+
+      - record: node:network_receive_errors_rate
+        expr: |
+          sum by (instance) (
+            rate(node_network_receive_errs_total[5m])
+          )
+
+      #################################################
+      # Network Transmit Errors
+      #################################################
+
+      - record: node:network_transmit_errors_rate
+        expr: |
+          sum by (instance) (
+            rate(node_network_transmit_errs_total[5m])
+          )
+
+      #################################################
+      # Network Receive Drops
+      #################################################
+
+      - record: node:network_receive_drops_rate
+        expr: |
+          sum by (instance) (
+            rate(node_network_receive_drop_total[5m])
+          )
+
+      #################################################
+      # Network Transmit Drops
+      #################################################
+
+      - record: node:network_transmit_drops_rate
+        expr: |
+          sum by (instance) (
+            rate(node_network_transmit_drop_total[5m])
+          )

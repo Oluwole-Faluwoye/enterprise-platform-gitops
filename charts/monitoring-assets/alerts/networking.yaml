@@ -1,0 +1,121 @@
+groups:
+
+  - name: kubernetes-networking
+
+    rules:
+
+      #################################################
+      # Network Receive Errors
+      #################################################
+
+      - alert: NodeNetworkReceiveErrors
+        expr: |
+          node:network_receive_errors_rate > 0
+        for: 5m
+        labels:
+          severity: warning
+          category: networking
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node receiving network errors"
+          description: |
+            Kubernetes node {{ $labels.instance }}
+            is experiencing network receive errors.
+
+      #################################################
+      # Network Transmit Errors
+      #################################################
+
+      - alert: NodeNetworkTransmitErrors
+        expr: |
+          node:network_transmit_errors_rate > 0
+        for: 5m
+        labels:
+          severity: warning
+          category: networking
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node transmitting network errors"
+          description: |
+            Kubernetes node {{ $labels.instance }}
+            is experiencing network transmit errors.
+
+      #################################################
+      # Network Receive Drops
+      #################################################
+
+      - alert: NodeNetworkReceiveDrops
+        expr: |
+          node:network_receive_drops_rate > 10
+        for: 10m
+        labels:
+          severity: warning
+          category: networking
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node network receive drops are elevated"
+          description: |
+            Kubernetes node {{ $labels.instance }}
+            is dropping more than 10 packets per second
+            on average.
+
+      #################################################
+      # Network Transmit Drops
+      #################################################
+
+      - alert: NodeNetworkTransmitDrops
+        expr: |
+          node:network_transmit_drops_rate > 10
+        for: 10m
+        labels:
+          severity: warning
+          category: networking
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node network transmit drops are elevated"
+          description: |
+            Kubernetes node {{ $labels.instance }}
+            is dropping more than 10 packets per second
+            on average.
+
+      #################################################
+      # Critical Receive Drops
+      #################################################
+
+      - alert: NodeNetworkReceiveDropsCritical
+        expr: |
+          node:network_receive_drops_rate > 100
+        for: 5m
+        labels:
+          severity: critical
+          category: networking
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node network receive drops are critical"
+          description: |
+            Kubernetes node {{ $labels.instance }}
+            is dropping more than 100 packets per second.
+
+      #################################################
+      # Critical Transmit Drops
+      #################################################
+
+      - alert: NodeNetworkTransmitDropsCritical
+        expr: |
+          node:network_transmit_drops_rate > 100
+        for: 5m
+        labels:
+          severity: critical
+          category: networking
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node network transmit drops are critical"
+          description: |
+            Kubernetes node {{ $labels.instance }}
+            is dropping more than 100 packets per second.

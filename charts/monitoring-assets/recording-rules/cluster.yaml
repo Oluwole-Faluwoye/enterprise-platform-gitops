@@ -11,14 +11,14 @@ groups:
       - record: cluster:cpu_usage:avg
         expr: |
           avg(
-            1 - rate(node_cpu_seconds_total{mode="idle"}[5m])
+            node:cpu_usage
           )
 
       #########################################
       # Cluster Memory Usage
       #########################################
 
-      - record: cluster:memory_usage:avg
+      - record: cluster:memory_usage:ratio
         expr: |
           1 -
           (
@@ -31,7 +31,7 @@ groups:
       # Cluster Filesystem Usage
       #########################################
 
-      - record: cluster:filesystem_usage:avg
+      - record: cluster:filesystem_usage:ratio
         expr: |
           1 -
           (

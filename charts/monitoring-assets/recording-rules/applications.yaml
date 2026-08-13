@@ -61,3 +61,106 @@ groups:
           increase(
             kube_pod_container_status_restarts_total[30m]
           )
+
+      #################################################
+      # HTTP Request Rate
+      #################################################
+
+      - record: application:http_requests_rate
+        expr: |
+          sum by (application) (
+            rate(
+              http_server_requests_seconds_count{
+                application!=""
+              }[5m]
+            )
+          )
+
+      #################################################
+      # HTTP 5xx Error Rate
+      #################################################
+
+      - record: application:http_5xx_rate
+        expr: |
+          (
+            sum by (application) (
+              rate(
+                http_server_requests_seconds_count{
+                  application!="",
+                  status=~"5.."
+                }[5m]
+              )
+            )
+          )
+          /
+          (
+            sum by (application) (
+              rate(
+                http_server_requests_seconds_count{
+                  application!=""
+                }[5m]
+              )
+            )
+          )
+
+      #################################################
+      # HTTP Average Latency
+      #################################################
+
+      - record: application:http_latency_seconds
+        expr: |
+          (
+            sum by (application) (
+              rate(
+                http_server_requests_seconds_sum{
+                  application!=""
+                }[5m]
+              )
+            )
+          )
+          /
+          (
+            sum by (application) (
+              rate(
+                http_server_requests_seconds_count{
+                  application!=""
+                }[5m]
+              )
+            )
+          )
+
+      #################################################
+      # JVM Heap Usage
+      #################################################
+
+      - record: application:jvm_heap_usage
+        expr: |
+          (
+            sum by (application) (
+              jvm_memory_used_bytes{
+                application!="",
+                area="heap"
+              }
+            )
+          )
+          /
+          (
+            sum by (application) (
+              jvm_memory_max_bytes{
+                application!="",
+                area="heap"
+              }
+            )
+          )
+
+      #################################################
+      # Application CPU Usage
+      #################################################
+
+      - record: application:cpu_usage
+        expr: |
+          avg by (application) (
+            process_cpu_usage{
+              application!=""
+            }
+          )

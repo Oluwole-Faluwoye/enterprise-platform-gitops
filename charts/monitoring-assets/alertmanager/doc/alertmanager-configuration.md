@@ -1,87 +1,209 @@
-# Alertmanager Configuration & SMTP Integration
+Alertmanager Configuration, SMTP Integration & Troubleshooting
+1. Overview
 
-## 1. Overview
+This document describes the implementation of Alertmanager email notifications for the Enterprise Platform monitoring stack.
 
-This document describes how Alertmanager was configured for the Enterprise Platform monitoring stack, how SMTP credentials are integrated securely, the problems encountered during implementation, and how those problems were resolved.
+The implementation integrates:
+
+Prometheus
+Alertmanager
+Grafana
+Helm
+Argo CD
+External Secrets Operator
+AWS Secrets Manager
+Kubernetes Secrets
+Brevo SMTP
+Custom Alertmanager email templates
+
+The design follows GitOps principles:
+
+Git
+ │
+ ├── Alertmanager configuration
+ ├── Helm values
+ ├── Alertmanager email templates
+ └── Kubernetes manifests
+        │
+        ▼
+      Argo CD
+        │
+        ▼
+    Kubernetes
+
+Sensitive SMTP credentials are not stored in Git.
+
+Instead:
+
+AWS Secrets Manager
+        │
+        ▼
+External Secrets Operator
+        │
+        ▼
+Kubernetes Secret
+        │
+        ▼
+Alertmanager
+        │
+        ▼
+Brevo SMTP
+        │
+        ▼
+Email recipient
+
+The final implementation was tested end-to-end and successfully delivered Alertmanager emails through Brevo to Yahoo Mail.
+
+2. Final Architecture
+
+The final architecture consists of two separate configuration paths.
+
+Configuration
+
+Non-sensitive configuration is managed through Git:
+
+GitHub
+   │
+   ▼
+enterprise-platform-gitops
+   │
+   ▼
+Argo CD
+   │
+   ▼
+monitoring-assets Helm chart
+   │
+   ├── Alertmanager configuration
+   ├── SMTP host
+   ├── SMTP port
+   ├── SMTP username
+   ├── SMTP from
+   ├── SMTP recipient
+   └── email.tmpl
+Secret
+
+The SMTP password is managed separately:
+
+AWS Secrets Manager
+        │
+        │
+        ▼
+External Secrets Operator
+        │
+        ▼
+Kubernetes Secret
+alertmanager-secret
+        │
+        ▼
+/etc/alertmanager/secrets/alertmanager-secret/smtp-password
+        │
+        ▼
+Alertmanager
+Notification flow
+Prometheus
+    │
+    │ Alert fires
+    ▼
+Alertmanager
+    │
+    │ Route based on severity
+    ▼
+platform-email
+    │
+    │ SMTP :587
+    ▼
+Brevo
+    │
+    ▼
+Yahoo Mail
+3. Repository Structure
+
+The relevant GitOps structure is:
+
+enterprise-platform-gitops/
+│
+├── charts/
+│   │
+│   ├── monitoring/
+│   │
+│   ├── monitoring-assets/
+│   │   │
+│   │   ├── Chart.yaml
+│   │   ├── values.yaml
+│   │   │
+│   │   ├── alertmanager/
+│   │   │   ├── config.yaml
+│   │   │   │
+│   │   │   └── templates/
+│   │   │       └── email.tmpl
+│   │   │
+│   │   └── templates/
+│   │       ├── alertmanager-config-secret.yaml
+│   │       └── alertmanager-templates-configmap.yaml
+│   │
+│   └── external-secrets/
+│
+└── ...
+
+The important files are:
+
+charts/monitoring-assets/values.yaml
+charts/monitoring-assets/alertmanager/config.yaml
+charts/monitoring-assets/alertmanager/templates/email.tmpl
+charts/monitoring-assets/templates/alertmanager-config-secret.yaml
+
+The ExternalSecret configuration is managed separately under:
+
+charts/external-secrets/
+4. Alertmanager SMTP Configuration
+
+The SMTP configuration is defined under:
+
+charts/monitoring-assets/values.yaml
+
+The structure is:
+
+alertmanager:
+  smtp:
+    host: smtp-relay.brevo.com
+    port: 587
+    username: YOUR_SMTP_USERNAME
+    from: alerts@example.com
+    to: recipient@example.com
+Important
+
+The SMTP password is not placed in values.yaml.
+
+The password remains in AWS Secrets Manager and is synchronized into Kubernetes by External Secrets Operator.
+
+5. SMTP Configuration Values
+
+The SMTP configuration contains:
+
+Value	Purpose
+host	SMTP relay hostname
+port	SMTP submission port
+username	SMTP authentication username
+from	Email sender
+to	Alert recipient
+password	SMTP authentication secret
 
 The implementation uses:
 
-* Prometheus
-* Alertmanager
-* Grafana
-* Helm
-* Argo CD
-* External Secrets Operator
-* AWS Secrets Manager
-* Kubernetes Secrets
-* SMTP for email notifications
+SMTP host: smtp-relay.brevo.com
+SMTP port: 587
+TLS: enabled
 
-The design intentionally keeps SMTP credentials outside Git.
+The SMTP password is provided to Alertmanager through a mounted Kubernetes Secret.
 
----
+6. AWS Secrets Manager
 
-# 2. Target Architecture
+The Alertmanager secret is stored in AWS Secrets Manager under:
 
-The final secret flow is:
-
-```text
-                         AWS Secrets Manager
-                                |
-                                |
-              enterprise-platform/dev/alertmanager
-                                |
-                                | ExternalSecret
-                                v
-                    External Secrets Operator
-                                |
-                                v
-                     Kubernetes Secret
-                      alertmanager-secret
-                                |
-                +---------------+---------------+
-                |               |               |
-           smtp-host       smtp-username    smtp-password
-           smtp-port       smtp-from        smtp-to
-                                |
-                                v
-                         Alertmanager
-                                |
-                                v
-                           SMTP Relay
-                                |
-                                v
-                        Alert Recipient
-```
-
-Terraform creates the AWS Secrets Manager secret containers.
-
-External Secrets Operator retrieves the values and creates the Kubernetes Secret.
-
-Alertmanager consumes the Kubernetes Secret for its SMTP password and uses the configured SMTP connection to send notifications.
-
----
-
-# 3. AWS Secrets Manager Design
-
-Terraform creates three secrets for the development environment:
-
-```text
-enterprise-platform/dev/auth-service
-enterprise-platform/dev/grafana/admin
 enterprise-platform/dev/alertmanager
-```
 
-The Alertmanager SMTP configuration belongs inside:
+The secret contains:
 
-```text
-enterprise-platform/dev/alertmanager
-```
-
-We deliberately did not create a separate secret for every SMTP property.
-
-The Alertmanager secret contains:
-
-```json
 {
   "smtp-host": "...",
   "smtp-port": "...",
@@ -90,889 +212,1237 @@ The Alertmanager secret contains:
   "smtp-from": "...",
   "smtp-to": "..."
 }
-```
+Security principle
 
-The repository's `secrets.json` maps the Terraform resource to the AWS secret name.
+Only the password needs to remain strictly secret at runtime.
 
----
+However, the entire SMTP configuration should be treated as environment configuration and should not expose unnecessary credentials in Git.
 
-# 4. Why There Are Two Bootstrap Files
+Never commit:
 
-The infrastructure repository contains:
-
-```text
-environments/dev/bootstrap-secrets.template.sh
-environments/dev/bootstrap-secrets.sh
-```
-
-The template is intentionally generic.
-
-It can safely be committed to Git because it contains placeholders rather than real credentials.
-
-Example:
-
-```bash
-aws secretsmanager put-secret-value \
-  --secret-id ${PROJECT}/${ENVIRONMENT}/alertmanager \
-  --secret-string '{
-    "smtp-host":"CHANGE_ME",
-    "smtp-port":"587",
-    "smtp-username":"CHANGE_ME",
-    "smtp-password":"CHANGE_ME",
-    "smtp-from":"CHANGE_ME",
-    "smtp-to":"CHANGE_ME"
-}'
-```
-
-The environment-specific file:
-
-```text
-bootstrap-secrets.sh
-```
-
-contains the actual development values.
-
-This file is excluded from Git through `.gitignore`.
-
-The repository already documents using the bootstrap script to populate development secrets.
-
----
-
-# 5. SMTP Configuration
-
-Alertmanager requires an SMTP relay to send email notifications.
-
-The configuration requires:
-
-```text
-SMTP host
-SMTP port
-SMTP username
 SMTP password
-SMTP sender
-SMTP recipient
-```
+SMTP key
+AWS credentials
+API keys
+private credentials
+7. External Secrets Operator
 
-These values have different purposes.
+External Secrets Operator retrieves the values from AWS Secrets Manager and creates:
 
-## smtp-host
+Secret:
+alertmanager-secret
 
-The hostname of the SMTP provider.
+Namespace:
+monitoring
 
-Example:
+The secret contains keys such as:
 
-```text
-smtp-relay.brevo.com
-```
+smtp-host
+smtp-port
+smtp-username
+smtp-password
+smtp-from
+smtp-to
 
-or another SMTP provider's relay hostname.
+The most important key for Alertmanager authentication is:
 
-## smtp-port
+smtp-password
 
-The SMTP submission port.
+Alertmanager consumes it from:
 
-A common choice is:
+/etc/alertmanager/secrets/alertmanager-secret/smtp-password
+8. Alertmanager Configuration
 
-```text
-587
-```
+The main Alertmanager configuration is:
 
-Port 587 is commonly used for authenticated SMTP submission with TLS.
-
-## smtp-username
-
-The SMTP login supplied by the SMTP provider.
-
-This is not necessarily the same as the email address shown in the `from` field.
-
-For example, a provider may issue a dedicated SMTP login.
-
-## smtp-password
-
-The SMTP authentication secret.
-
-This must not be stored in Git.
-
-For providers such as Brevo, this is an SMTP key rather than the account password or an API key.
-
-## smtp-from
-
-The sender address displayed on the email.
-
-Example:
-
-```text
-alerts@example.com
-```
-
-The sender normally needs to be configured or verified with the SMTP provider.
-
-## smtp-to
-
-The address that receives Alertmanager notifications.
-
-Example:
-
-```text
-platform@example.com
-```
-
-For development this can simply be the engineer's personal email address.
-
----
-
-# 6. Alertmanager Configuration
-
-The Alertmanager configuration is stored in:
-
-```text
 charts/monitoring-assets/alertmanager/config.yaml
-```
 
-The configuration defines:
+It defines:
 
-* global Alertmanager settings
-* notification routes
-* receivers
-* email configuration
-* inhibition rules
-* email templates
+global configuration
+routing
+receivers
+email configuration
+inhibition rules
 
-The configuration routes alerts based on severity.
+The current routing strategy is:
 
-Current routing behavior:
-
-```text
 critical → platform-email
 warning  → platform-email
 info     → default
-```
 
-This means critical and warning alerts are sent through the configured email receiver.
+Therefore:
 
----
+Critical alerts → email
+Warning alerts  → email
+Info alerts     → default receiver
+9. The platform-email Receiver
 
-# 7. Alertmanager Email Receiver
+The receiver uses:
 
-The email receiver uses the SMTP configuration.
-
-Conceptually:
-
-```yaml
 receivers:
 
   - name: default
 
   - name: platform-email
-
     email_configs:
-
-      - to: "..."
-
-        from: "..."
-
-        smarthost: "...:587"
-
-        auth_username: "..."
-
+      - to: "{{ .Values.alertmanager.smtp.to }}"
+        from: "{{ .Values.alertmanager.smtp.from }}"
+        smarthost: "{{ .Values.alertmanager.smtp.host }}:{{ .Values.alertmanager.smtp.port }}"
+        auth_username: "{{ .Values.alertmanager.smtp.username }}"
         auth_password_file: "/etc/alertmanager/secrets/alertmanager-secret/smtp-password"
-
         require_tls: true
-
         send_resolved: true
-```
 
-The password is intentionally referenced as a file:
+The important security decision is:
 
-```text
-/etc/alertmanager/secrets/alertmanager-secret/smtp-password
-```
+auth_password_file:
+  /etc/alertmanager/secrets/alertmanager-secret/smtp-password
 
-rather than placing the password directly inside the Alertmanager configuration.
+rather than:
 
----
+auth_password: "actual-password"
+10. Why tpl Was Required
 
-# 8. External Secrets Operator
+One of the major problems encountered was that alertmanager/config.yaml was loaded using:
 
-The ExternalSecret resource is located at:
+.Files.Get
 
-```text
-charts/external-secrets/templates/alertmanager-secret.yaml
-```
+The file contained Helm expressions such as:
 
-It maps six AWS Secrets Manager properties into the Kubernetes Secret:
-
-```text
-smtp-host
-smtp-port
-smtp-username
-smtp-password
-smtp-from
-smtp-to
-```
-
-The important mapping is:
-
-```yaml
-- secretKey: smtp-password
-  remoteRef:
-    key: enterprise-platform/dev/alertmanager
-    property: smtp-password
-```
-
-The same pattern is used for the other five properties.
-
-The Kubernetes Secret created by External Secrets is:
-
-```text
-alertmanager-secret
-```
-
-in the:
-
-```text
-monitoring
-```
-
-namespace.
-
----
-
-# 9. Alertmanager Configuration Secret
-
-The monitoring-assets Helm chart creates:
-
-```text
-alertmanager-config
-```
-
-This Secret contains:
-
-```text
-alertmanager.yaml
-```
-
-The chart renders the configuration from:
-
-```text
-alertmanager/config.yaml
-```
-
-using Helm's `tpl` functionality.
-
-This allows environment-specific Helm values to be inserted into the Alertmanager configuration during rendering.
-
----
-
-# 10. Alertmanager Templates
-
-Custom email templates are stored under:
-
-```text
-charts/monitoring-assets/alertmanager/templates/
-```
-
-The current template includes:
-
-```text
-email.tmpl
-```
-
-The template defines:
-
-```text
-email.subject
-email.body
-```
-
-The subject contains the alert status and alert name.
-
-The body includes information such as:
-
-```text
-Alert Name
-Status
-Severity
-Environment
-```
-
-The template is exposed to Alertmanager through the:
-
-```text
-alertmanager-templates
-```
-
-ConfigMap.
-
----
-
-# 11. ConfigMap Mount
-
-Alertmanager mounts the ConfigMap under:
-
-```text
-/etc/alertmanager/configmaps/alertmanager-templates/
-```
-
-The Alertmanager configuration therefore references:
-
-```yaml
-templates:
-  - "/etc/alertmanager/configmaps/alertmanager-templates/*.tmpl"
-```
-
-This allows Alertmanager to resolve:
-
-```text
-email.subject
-email.body
-```
-
-at runtime.
-
----
-
-# 12. Problem Encountered: Template Functions Were Not Being Resolved
-
-Initially the Alertmanager configuration contained:
-
-```yaml
 {{ .Values.alertmanager.smtp.to }}
-{{ .Values.alertmanager.smtp.from }}
-{{ .Values.alertmanager.smtp.host }}
-```
 
-but the chart was reading `config.yaml` using `.Files.Get`.
+However, .Files.Get reads the file as content and does not automatically evaluate those Helm expressions.
 
-This caused Helm to treat the file as plain file content instead of evaluating the embedded Helm expressions.
+The solution was:
 
-The solution was to use:
+{{ tpl (.Files.Get "alertmanager/config.yaml") . | indent 4 }}
 
-```gotemplate
-tpl (.Files.Get "alertmanager/config.yaml") .
-```
+This is used in:
 
-instead of only:
+charts/monitoring-assets/templates/alertmanager-config-secret.yaml
 
-```gotemplate
-.Files.Get "alertmanager/config.yaml"
-```
+The important distinction is:
 
-This allowed the Alertmanager configuration to consume values from `values.yaml`.
+.Files.Get
 
----
+means:
 
-# 13. Problem Encountered: Missing SMTP Values
+Read this file.
 
-At one point Helm produced:
+Whereas:
 
-```text
-nil pointer evaluating interface {}.smtp
-```
+tpl (.Files.Get ...) .
 
-The problem was that:
+means:
 
-```text
-.Values.alertmanager.smtp
-```
+Read this file and evaluate the Helm templates inside it.
 
-did not exist in the chart values being used during rendering.
+This allowed:
 
-The SMTP configuration was added to:
+.Values.alertmanager.smtp.*
 
-```text
-charts/monitoring-assets/values.yaml
-```
+to be rendered correctly.
 
-with the structure:
+11. Helm Values Structure
 
-```yaml
-alertmanager:
-  smtp:
-    host: ...
-    port: ...
-    username: ...
-    from: ...
-    to: ...
-```
-
-After that change:
-
-```bash
-helm lint charts/monitoring-assets
-```
-
-passed successfully.
-
----
-
-# 14. Problem Encountered: Email Template Not Defined
-
-Helm initially reported:
-
-```text
-template "email.subject" not defined
-```
-
-The reason was that Alertmanager's configuration referenced:
-
-```gotemplate
-{{ template "email.subject" . }}
-```
-
-before the corresponding template was available to the rendered chart.
-
-The solution was to create:
-
-```text
-alertmanager/templates/email.tmpl
-```
-
-and define:
-
-```gotemplate
-{{ define "email.subject" }}
-[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}
-{{ end }}
-```
-
-and:
-
-```gotemplate
-{{ define "email.body" }}
-...
-{{ end }}
-```
-
-The template is then placed in the ConfigMap mounted into Alertmanager.
-
----
-
-# 15. Problem Encountered: ConfigMap Mount Path
-
-The initial configuration used:
-
-```text
-/etc/alertmanager/templates/*.tmpl
-```
-
-However, the kube-prometheus-stack configuration mounts explicitly configured ConfigMaps under:
-
-```text
-/etc/alertmanager/configmaps/
-```
-
-The final configuration therefore uses:
-
-```text
-/etc/alertmanager/configmaps/alertmanager-templates/*.tmpl
-```
-
-This was verified against the kube-prometheus-stack chart configuration.
-
----
-
-# 16. Problem Encountered: ExternalSecret YAML Indentation
-
-When `smtp-from` and `smtp-to` were added to the ExternalSecret, Helm initially failed with:
-
-```text
-yaml: line 51: did not find expected key
-```
-
-The problem was indentation.
-
-Incorrect:
-
-```yaml
-- secretKey: smtp-from
-remoteRef:
-```
+The values must have the correct hierarchy.
 
 Correct:
 
-```yaml
-- secretKey: smtp-from
-  remoteRef:
-    key: ...
-    property: smtp-from
-```
+alertmanager:
+  smtp:
+    host: smtp-relay.brevo.com
+    port: 587
+    username: YOUR_USERNAME
+    from: alerts@example.com
+    to: recipient@example.com
 
-After correcting the indentation, Helm successfully rendered all six properties.
+A missing hierarchy can result in errors such as:
 
-Validation confirmed:
+nil pointer evaluating interface {}.smtp
 
-```text
-smtp-host
-smtp-port
-smtp-username
-smtp-password
-smtp-from
-smtp-to
-```
+Therefore, when changing Alertmanager values, verify the indentation carefully.
 
----
+12. Custom Email Template
 
-# 17. Validation Commands
+The custom template is:
 
-Before deployment, validate the monitoring-assets chart:
+charts/monitoring-assets/alertmanager/templates/email.tmpl
 
-```bash
-helm lint charts/monitoring-assets
-```
+It defines:
 
-Render it:
+email.subject
+email.body
 
-```bash
-helm template charts/monitoring-assets > rendered.yaml
-```
+The final subject logic is:
 
-Inspect the Alertmanager configuration:
+{{ define "email.subject" }}
+{{ if eq .Status "firing" -}}
+🚨 [{{ .CommonLabels.severity | toUpper }}] {{ .CommonLabels.alertname }} — {{ .CommonLabels.environment }} / {{ .CommonLabels.namespace }}
+{{- else -}}
+✅ [{{ .CommonLabels.severity | toUpper }}] {{ .CommonLabels.alertname }} — {{ .CommonLabels.environment }} / {{ .CommonLabels.namespace }}
+{{- end }}
+{{ end }}
 
-```bash
-grep -n -A75 "name: alertmanager-config" rendered.yaml
-```
+This produces:
 
-Inspect the email receiver:
+Firing
+🚨 [WARNING] AlertmanagerSubjectTest — dev / monitoring
+Resolved
+✅ [WARNING] AlertmanagerSubjectTest — dev / monitoring
 
-```bash
-grep -n -A20 "email_configs:" rendered.yaml
-```
+This makes the notification immediately understandable from the email subject.
 
-Inspect the email templates:
+13. Email Body
 
-```bash
-grep -n -A25 "name: alertmanager-templates" rendered.yaml
-```
+The body includes:
 
-Validate External Secrets:
+ENTERPRISE PLATFORM - ALERT NOTIFICATION
 
-```bash
-helm lint charts/external-secrets
-```
+Alert
+Status
+Severity
 
-Render:
+Environment
+Cluster
+Namespace
+Team
 
-```bash
-helm template charts/external-secrets > external-secrets-rendered.yaml
-```
+Alert Details
+Summary
+Description
 
-Verify the six Alertmanager properties:
+Alert Instance
+Started
+Resolved
+Labels
 
-```bash
-grep -n "secretKey:" external-secrets-rendered.yaml
-```
+Runbook
 
-Expected:
+Alertmanager
 
-```text
-smtp-host
-smtp-port
-smtp-username
-smtp-password
-smtp-from
-smtp-to
-```
+For a firing alert:
 
----
+ALERT FIRING
 
-# 18. Security Rules
+is displayed.
 
-Never commit:
+For a resolved alert:
 
-```text
-SMTP password
-SMTP API key
-SMTP secret
-AWS secret values
-```
+ALERT RESOLVED
 
-The generic template may be committed:
+is displayed.
 
-```text
-bootstrap-secrets.template.sh
-```
+14. Critical Template Problem We Encountered
 
-The real environment-specific file must remain ignored:
+An important Alertmanager template issue occurred with:
 
-```text
-bootstrap-secrets.sh
-```
+{{ .StartsAt }}
 
-AWS Secrets Manager is the source of truth for the runtime SMTP secret.
+Initially, .StartsAt was referenced directly from the top-level template context.
 
-External Secrets Operator is responsible for transferring the required properties into Kubernetes.
+Alertmanager produced:
 
----
+can't evaluate field StartsAt in type *template.Data
 
-# 19. Recommended Free SMTP Provider for Development
+The problem was that .StartsAt belongs to an individual alert object, not the top-level Alertmanager template data.
 
-For this project, Brevo is a good option for development and low-volume platform alerts.
+The solution was to iterate through the alerts:
 
-Brevo currently provides a free plan with 300 email sends per day.
+{{ range .Alerts }}
 
-Brevo also provides SMTP relay credentials and allows SMTP keys to be generated from:
+Started:
+{{ .StartsAt }}
 
-```text
-Settings
-→ SMTP & API
-→ SMTP
-→ Generate a new SMTP key
-```
+{{ end }}
 
-The SMTP key should be treated as a password and stored securely. Brevo explicitly states that the SMTP key, rather than an API key, should be used for SMTP relay authentication.
+This changed the template context from:
 
-Brevo's SMTP relay hostname is:
+template.Data
 
-```text
-smtp-relay.brevo.com
-```
+to:
 
-and its documented SMTP ports include:
+individual alert
 
-```text
-587
-2525
-465
-```
+where:
 
-with port 465 requiring SSL/TLS.
+.StartsAt
+.EndsAt
+.Labels
 
----
+are available.
 
-# 20. How to Create the SMTP Credentials
+This is an important Alertmanager template rule.
 
-Create a free Brevo account.
+15. Correct Alertmanager Template Scope
 
-Then:
+Top-level properties include things such as:
 
-```text
-Brevo
-  ↓
-Settings
-  ↓
-SMTP & API
-  ↓
-SMTP
-  ↓
-Generate a new SMTP key
-```
+.Status
+.CommonLabels
+.CommonAnnotations
 
-Give the key a descriptive name, for example:
+Individual alert properties include:
 
-```text
-enterprise-platform-alertmanager-dev
-```
+.StartsAt
+.EndsAt
+.Labels
+.Annotations
 
-Brevo recommends storing the generated key securely because the full key is shown only when it is generated.
+Therefore:
 
-You will then have:
+{{ .CommonLabels.alertname }}
 
-```text
-SMTP Host:
-smtp-relay.brevo.com
+is valid at the top level.
 
-SMTP Port:
-587
+But:
 
-SMTP Username:
-Your Brevo SMTP login
+{{ .StartsAt }}
 
-SMTP Password:
-Your generated SMTP key
-```
+must be used inside:
 
-You also need a sender address configured/verified in Brevo.
-
-The recipient can be your own email address for development.
-
-Brevo requires the From address to be a valid/verified sender. You create it under Settings → Senders, Domains, IPs → Senders → Add a sender. Brevo then verifies the address by sending a verification code unless you've authenticated the domain.
-
-Create the sender
-
-In Brevo go to:
-
-Settings → You would see Senders, Domains, Dedicated IPs    
-
-Slect : → Senders → Add a sender
-
-Then use something like:
-
-Field	       What to enter
-
-From name	  Enterprise Platform Alerts
-From email	  alerts@YOURDOMAIN.com
-
-For example, if your authenticated domain is mycompany.com:
-
-From name:  Enterprise Platform Alerts
-From email: alerts@mycompany.com
-
----
-
-# 21. Example Development Configuration
-
-Do not commit real values.
-
-The local development secret could conceptually look like:
-
-```json
-{
-  "smtp-host": "smtp-relay.brevo.com",
-  "smtp-port": "587",
-  "smtp-username": "YOUR_BREVO_SMTP_LOGIN",
-  "smtp-password": "YOUR_BREVO_SMTP_KEY",
-  "smtp-from": "YOUR_VERIFIED_SENDER",
-  "smtp-to": "YOUR_TEST_RECIPIENT"
-}
-```
+{{ range .Alerts }}
 
 For example:
 
-```text
-smtp-host     → smtp-relay.brevo.com
-smtp-port     → 587
-smtp-username → Brevo SMTP login
-smtp-password → generated SMTP key
-smtp-from     → verified sender
-smtp-to       → your email address
-```
+{{ range .Alerts }}
 
----
+Started:
+{{ .StartsAt }}
 
-# 22. Testing Strategy
+{{ if not .EndsAt.IsZero }}
+Resolved:
+{{ .EndsAt }}
+{{ end }}
 
-After the infrastructure has been recreated:
+{{ end }}
+16. Alertmanager Template ConfigMap
 
-```text
-AWS Secrets Manager
-        ↓
-External Secrets Operator
-        ↓
-alertmanager-secret
-        ↓
-Alertmanager
-        ↓
-Prometheus alert
-        ↓
-platform-email receiver
-        ↓
-SMTP relay
-        ↓
-test recipient
-```
+The template is exposed through:
 
-First verify the Kubernetes Secret:
+alertmanager-templates
 
-```bash
-kubectl get secret alertmanager-secret -n monitoring
-```
+ConfigMap.
 
-Then inspect its keys without printing the secret values:
+The template is mounted into Alertmanager at:
 
-```bash
-kubectl get secret alertmanager-secret \
+/etc/alertmanager/configmaps/alertmanager-templates/
+
+The Alertmanager configuration references:
+
+templates:
+  - "/etc/alertmanager/configmaps/alertmanager-templates/*.tmpl"
+
+This mount path was important because the initial assumption about the template path was incorrect.
+
+17. Verifying the Template in Kubernetes
+
+Check the ConfigMap:
+
+kubectl get configmap alertmanager-templates \
   -n monitoring \
-  -o jsonpath='{.data}' | jq 'keys'
-```
+  -o jsonpath='{.data.email\.tmpl}'
 
-Verify Alertmanager:
+You should see:
 
-```bash
-kubectl get pods -n monitoring
-```
+define "email.subject"
 
-Check Alertmanager logs:
+and:
 
-```bash
-kubectl logs -n monitoring <alertmanager-pod>
-```
+define "email.body"
 
-Finally trigger a controlled test alert and confirm that the notification reaches the configured recipient.
+You can also inspect the actual file mounted inside the Alertmanager container:
 
----
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  cat /etc/alertmanager/configmaps/alertmanager-templates/email.tmpl
+18. Important Windows Git Bash Issue
 
-# 23. Final Design Principle
+Because the environment is Windows Git Bash, commands containing Linux paths can be modified by MSYS path conversion.
 
-The most important design decision is:
+For example:
 
-```text
+kubectl exec ... cat /etc/alertmanager/...
+
+can incorrectly become something resembling:
+
+C:/Program Files/Git/etc/alertmanager/...
+
+This produced errors such as:
+
+cat: can't open 'C:/Program Files/Git/etc/...'
+
+The solution is:
+
+MSYS_NO_PATHCONV=1
+
+For example:
+
+MSYS_NO_PATHCONV=1 kubectl exec ...
+
+This should be used when executing commands that contain Linux container paths from Git Bash on Windows.
+
+19. Actual Alertmanager StatefulSet Name
+
+The Alertmanager StatefulSet is:
+
+alertmanager-prometheus-stack-kube-prom-alertmanager
+
+The pod is:
+
+alertmanager-prometheus-stack-kube-prom-alertmanager-0
+
+This is important because the Prometheus stack name is part of the generated resource name.
+
+For example, this is incorrect:
+
+kubectl rollout restart statefulset \
+  prometheus-stack-kube-prom-alertmanager \
+  -n monitoring
+
+The correct StatefulSet is:
+
+kubectl rollout restart statefulset \
+  alertmanager-prometheus-stack-kube-prom-alertmanager \
+  -n monitoring
+
+Verify with:
+
+kubectl get statefulsets -n monitoring
+20. Do You Need to Restart Alertmanager?
+
+Normally, do not immediately restart Alertmanager after every configuration change.
+
+First verify whether the mounted ConfigMap/configuration has already been updated.
+
+Check:
+
+kubectl get configmap alertmanager-templates \
+  -n monitoring \
+  -o jsonpath='{.data.email\.tmpl}'
+
+Then check the mounted file:
+
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  cat /etc/alertmanager/configmaps/alertmanager-templates/email.tmpl
+
+If the new template is already present, Alertmanager has access to it.
+
+A restart can still be used when necessary:
+
+kubectl rollout restart statefulset \
+  alertmanager-prometheus-stack-kube-prom-alertmanager \
+  -n monitoring
+
+Then:
+
+kubectl get pods -n monitoring | grep alertmanager
+
+Wait until:
+
+2/2 Running
+21. Argo CD Synchronization
+
+The monitoring resources are managed through Argo CD.
+
+Check:
+
+kubectl get applications -n argocd
+
+The relevant applications include:
+
+monitoring-assets
+monitoring-alerts
+prometheus-stack
+
+For changes to:
+
+charts/monitoring-assets/
+
+the primary application to synchronize is:
+
+monitoring-assets
+
+After pushing Git changes:
+
+git add .
+git commit -m "..."
+git push origin main
+
+verify:
+
+kubectl get applications -n argocd
+
+Expected:
+
+monitoring-assets   Synced   Healthy
+
+If it remains OutOfSync, synchronize monitoring-assets in Argo CD.
+
+22. Helm Validation
+
+Before pushing changes:
+
+helm lint charts/monitoring-assets
+
+Expected:
+
+1 chart(s) linted, 0 chart(s) failed
+
+Render:
+
+helm template charts/monitoring-assets \
+  > /tmp/monitoring-assets-rendered.yaml
+
+Inspect the receiver:
+
+grep -n -A20 "platform-email" \
+  /tmp/monitoring-assets-rendered.yaml
+
+Inspect the template:
+
+grep -n -A80 "email.tmpl:" \
+  /tmp/monitoring-assets-rendered.yaml
+
+Verify the template contains:
+
+.StartsAt
+
+inside:
+
+range .Alerts
+23. Verify the Rendered SMTP Configuration
+
+Run:
+
+grep -n -A15 "name: platform-email" \
+  /tmp/monitoring-assets-rendered.yaml
+
+Expected structure:
+
+- name: platform-email
+  email_configs:
+    - to: "..."
+      from: "..."
+      smarthost: "smtp-relay.brevo.com:587"
+      auth_username: "..."
+      auth_password_file: "/etc/alertmanager/secrets/alertmanager-secret/smtp-password"
+      require_tls: true
+      send_resolved: true
+
+Do not print or commit the actual SMTP password.
+
+24. Verify Alertmanager Configuration in the Pod
+
+Run:
+
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  grep -n -A15 -B5 "platform-email" \
+  /etc/alertmanager/config_out/alertmanager.env.yaml
+
+You should see:
+
+receiver: platform-email
+
+and:
+
+smtp-relay.brevo.com:587
+
+and:
+
+auth_password_file:
+
+and:
+
+templates:
+- /etc/alertmanager/configmaps/alertmanager-templates/*.tmpl
+25. Verify Alertmanager Health
+
+Check the pod:
+
+kubectl get pods -n monitoring | grep alertmanager
+
+Expected:
+
+alertmanager-prometheus-stack-kube-prom-alertmanager-0
+2/2 Running
+
+Check the Alertmanager resource:
+
+kubectl get alertmanager -n monitoring
+
+Expected:
+
+READY       1
+RECONCILED  True
+AVAILABLE   True
+26. Check Alertmanager Logs
+
+Use:
+
+kubectl logs -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager --since=10m
+
+Filter for notification problems:
+
+kubectl logs -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager --since=10m |
+  grep -iE "notify|error|smtp|email|platform-email"
+
+Successful configuration loading looks like:
+
+Loading configuration file
+Completed loading of configuration file
+
+A previous template problem produced:
+
+can't evaluate field StartsAt in type *template.Data
+
+If that appears again, inspect email.tmpl and verify .StartsAt is inside:
+
+{{ range .Alerts }}
+27. Checking Alertmanager Routes
+
+Use:
+
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  amtool config routes test \
+  --alertmanager.url=http://localhost:9093 \
+  severity=warning \
+  namespace=monitoring \
+  team=platform \
+  alertname=TestAlert
+
+For a warning alert, the expected receiver is:
+
+platform-email
+
+This is an important troubleshooting step because an alert can exist in Alertmanager but still not be routed to email.
+
+28. Firing a Manual Test Alert
+
+The most reliable method used during testing was amtool.
+
+Use:
+
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  amtool alert add AlertmanagerSubjectTest \
+  'severity=warning' \
+  'namespace=monitoring' \
+  'team=platform' \
+  'environment=dev' \
+  --annotation='summary=Subject Test' \
+  --annotation='description=Testing dynamic firing and resolved subjects' \
+  --alertmanager.url=http://localhost:9093
+Important Git Bash note
+
+Always use:
+
+MSYS_NO_PATHCONV=1
+
+when necessary on Windows Git Bash.
+
+29. amtool Parser Warning
+
+During testing, commands containing spaces in annotations produced warnings such as:
+
+Alertmanager is moving to a new parser for labels and matchers
+
+For example:
+
+summary=Enterprise Platform Alertmanager Test
+
+could generate parser warnings.
+
+This did not mean SMTP was broken.
+
+The alert was still created successfully.
+
+The warning comes from amtool parsing the matcher-style input.
+
+The safer approach is to quote the annotation:
+
+--annotation='summary=Enterprise Platform Alertmanager Test'
+
+and:
+
+--annotation='description=Testing Alertmanager email delivery'
+
+The warning can still appear depending on the Alertmanager/amtool version, but it does not necessarily indicate notification failure.
+
+30. Verify the Test Alert
+
+Query the alert:
+
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  amtool alert query \
+  'alertname="AlertmanagerSubjectTest"' \
+  --alertmanager.url=http://localhost:9093
+
+Expected:
+
+AlertmanagerSubjectTest
+
+with:
+
+active
+31. Inspect Alert Details
+
+Use:
+
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  amtool alert query \
+  'alertname="AlertmanagerSubjectTest"' \
+  --alertmanager.url=http://localhost:9093 \
+  -o extended
+
+This displays:
+
+Labels
+Annotations
+Starts At
+Ends At
+State
+
+This is useful for confirming that:
+
+severity
+namespace
+team
+environment
+summary
+description
+
+were actually attached to the alert.
+
+32. Verify Email Delivery Through Metrics
+
+Alertmanager exposes notification metrics.
+
+Check successful email notification attempts:
+
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  wget -qO- http://localhost:9093/metrics |
+  grep 'alertmanager_notifications_total{integration="email"}'
+
+Example:
+
+alertmanager_notifications_total{integration="email"} 8
+
+The exact number will change as more notifications are sent.
+
+33. Check for Failed Email Notifications
+
+Run:
+
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  wget -qO- http://localhost:9093/metrics |
+  grep 'alertmanager_notification_requests_failed_total{integration="email"}'
+
+The desired result is:
+
+alertmanager_notification_requests_failed_total{integration="email"} 0
+
+This was successfully achieved during testing.
+
+This is one of the strongest indicators that the SMTP delivery mechanism itself is working.
+
+34. Troubleshooting: Email Not Received
+
+If an alert exists but no email arrives, troubleshoot in this order.
+
+Step 1 — Is the alert active?
+amtool alert query ...
+Step 2 — Is it routed to email?
+amtool config routes test ...
+
+Expected:
+
+platform-email
+Step 3 — Check Alertmanager logs
+kubectl logs ...
+
+Search for:
+
+notify
+error
+smtp
+email
+platform-email
+Step 4 — Check notification metrics
+alertmanager_notifications_total
+
+and:
+
+alertmanager_notification_requests_failed_total
+Step 5 — Check the recipient's spam folder
+
+During testing, Yahoo Mail placed several Alertmanager emails in Spam.
+
+This does not necessarily indicate an Alertmanager or SMTP failure.
+
+If the email exists in Spam, SMTP delivery succeeded.
+
+35. Yahoo Mail / Spam Behavior
+
+During testing, Alertmanager emails were successfully delivered to Yahoo Mail but some messages initially appeared in Spam.
+
+The Yahoo message displayed:
+
+For your security we disabled all images and links in this email.
+
+and Yahoo's interface offered:
+
+mark this message as not spam
+
+This is a recipient-side email filtering issue rather than an Alertmanager SMTP failure.
+
+If the messages repeatedly land in Spam:
+
+Open the message.
+Select Not Spam / Mark as not spam.
+Add the sender to contacts if appropriate.
+Verify that the sending domain/sender is properly authenticated with the SMTP provider.
+For production, use a properly authenticated organizational domain.
+36. Troubleshooting: Template Is Not Updated
+
+Check the ConfigMap:
+
+kubectl get configmap alertmanager-templates \
+  -n monitoring \
+  -o jsonpath='{.data.email\.tmpl}'
+
+Then check the mounted file:
+
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  cat /etc/alertmanager/configmaps/alertmanager-templates/email.tmpl
+
+If the ConfigMap contains the new template but the mounted file does not, investigate the pod/mount.
+
+If both contain the new template, the template is available to Alertmanager.
+
+37. Troubleshooting: Template Error
+
+If logs contain:
+
+can't evaluate field StartsAt in type *template.Data
+
+look for:
+
+{{ .StartsAt }}
+
+outside:
+
+{{ range .Alerts }}
+
+Correct:
+
+{{ range .Alerts }}
+
+Started:
+{{ .StartsAt }}
+
+{{ end }}
+
+Incorrect:
+
+Started:
+{{ .StartsAt }}
+
+at the top level.
+
+38. Troubleshooting: StatefulSet Not Found
+
+If:
+
+kubectl rollout restart statefulset prometheus-stack-kube-prom-alertmanager
+
+returns:
+
+statefulsets.apps "... " not found
+
+list the actual StatefulSets:
+
+kubectl get statefulsets -n monitoring
+
+The generated Alertmanager StatefulSet in this implementation is:
+
+alertmanager-prometheus-stack-kube-prom-alertmanager
+39. Troubleshooting: Argo CD OutOfSync
+
+Check:
+
+kubectl get applications -n argocd
+
+Look for:
+
+monitoring-assets
+
+If it says:
+
+OutOfSync
+
+synchronize the application through Argo CD.
+
+After synchronization:
+
+kubectl get applications -n argocd
+
+Expected:
+
+monitoring-assets   Synced   Healthy
+40. Troubleshooting: Helm Rendering
+
+Always render the chart locally before pushing:
+
+helm lint charts/monitoring-assets
+
+then:
+
+helm template charts/monitoring-assets \
+  > /tmp/monitoring-assets-rendered.yaml
+
+Check the SMTP receiver:
+
+grep -n -A20 "platform-email" \
+  /tmp/monitoring-assets-rendered.yaml
+
+Check the template:
+
+grep -n "StartsAt" \
+  /tmp/monitoring-assets-rendered.yaml
+
+Check for accidental unresolved Helm variables:
+
+grep -n '\${SMTP_' \
+  /tmp/monitoring-assets-rendered.yaml
+
+The output should be empty if no unresolved ${SMTP_*} placeholders are being used.
+
+41. GitOps Deployment Workflow
+
+The normal workflow is:
+
+1. Modify Helm configuration
+        ↓
+2. helm lint
+        ↓
+3. helm template
+        ↓
+4. Inspect rendered configuration
+        ↓
+5. git diff --check
+        ↓
+6. git add
+        ↓
+7. git commit
+        ↓
+8. git push
+        ↓
+9. Argo CD sync
+        ↓
+10. Verify Kubernetes resources
+        ↓
+11. Test Alertmanager
+        ↓
+12. Verify email
+
+Example:
+
+helm lint charts/monitoring-assets
+helm template charts/monitoring-assets \
+  > /tmp/monitoring-assets-rendered.yaml
+git diff --check
+git status
+
+Then:
+
+git add charts/monitoring-assets/
+git commit -m "feat: update Alertmanager notifications"
+git push origin main
+42. Final End-to-End Verification Checklist
+
+Before considering Alertmanager production-ready, verify:
+
 Git
- ↓
-configuration + templates only
-
-AWS Secrets Manager
- ↓
-actual credentials
-
-External Secrets Operator
- ↓
-Kubernetes Secret
-
+[ ] Changes committed
+[ ] Changes pushed
+[ ] No secrets committed
+Helm
+[ ] helm lint passes
+[ ] helm template succeeds
+[ ] SMTP configuration renders correctly
+[ ] email.tmpl renders correctly
+Argo CD
+[ ] monitoring-assets = Synced
+[ ] monitoring-assets = Healthy
+Kubernetes
+[ ] Alertmanager pod = Running
+[ ] Alertmanager = Ready
+[ ] ConfigMap exists
+[ ] alertmanager-secret exists
 Alertmanager
- ↓
-SMTP notification
-```
+[ ] Configuration loads successfully
+[ ] platform-email route works
+[ ] SMTP configuration is present
+[ ] Template is mounted
+Email
+[ ] Test firing email received
+[ ] Test resolved email received
+[ ] Dynamic subject works
+[ ] SMTP failure metric = 0
+43. Final Tested Notification Format
 
-This keeps credentials out of Git while allowing the monitoring configuration to remain fully GitOps-managed.
+The final notification subject format is:
 
-The SMTP provider can be replaced later without redesigning the Kubernetes architecture.
+Firing
+🚨 [WARNING] AlertName — dev / monitoring
+Resolved
+✅ [WARNING] AlertName — dev / monitoring
 
-Only the values in AWS Secrets Manager need to change:
+This gives the recipient immediate visibility into:
 
-```text
-smtp-host
-smtp-port
-smtp-username
-smtp-password
-smtp-from
-smtp-to
-```
+Status
+Severity
+Alert
+Environment
+Namespace
 
------------------------------------------------------------------------------
-The Alertmanager and External Secrets architecture remains unchanged.
------------------------------------------------------------------------------
+without opening the email.
 
+44. Final Testing Procedure
 
-                         AWS
-                          │
-                ┌─────────▼──────────┐
-                │ Secrets Manager    │
-                │                    │
-                │ enterprise-platform│
-                │ /dev/alertmanager  │
-                └─────────┬──────────┘
-                          │
-                          ▼
-                External Secrets Operator
-                          │
-                          ▼
-                ┌─────────────────────┐
-                │ alertmanager-secret │
-                │     Kubernetes      │
-                └─────────┬───────────┘
-                          │
-             ┌────────────┴────────────┐
-             │                         │
-             ▼                         ▼
-      Environment vars          smtp-password
-       SMTP_HOST                mounted secret
-       SMTP_PORT
-       SMTP_USERNAME
-       SMTP_FROM
-       SMTP_TO
-             │                         │
-             └────────────┬────────────┘
-                          ▼
-                  ┌──────────────┐
-                  │ Alertmanager │
-                  │              │
-                  │ config.expand│
-                  │ -env=true    │
-                  └──────┬───────┘
-                         │
-                         ▼
-                  Brevo SMTP :587
-                         │
-                         ▼
-                    Your email
+For a quick future smoke test:
+
+Create alert
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  amtool alert add AlertmanagerSmokeTest \
+  'severity=warning' \
+  'namespace=monitoring' \
+  'team=platform' \
+  'environment=dev' \
+  --annotation='summary=Alertmanager Smoke Test' \
+  --annotation='description=Testing Alertmanager email delivery' \
+  --alertmanager.url=http://localhost:9093
+Verify alert
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  amtool alert query \
+  'alertname="AlertmanagerSmokeTest"' \
+  --alertmanager.url=http://localhost:9093
+Verify routing
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  amtool config routes test \
+  --alertmanager.url=http://localhost:9093 \
+  severity=warning \
+  namespace=monitoring \
+  team=platform \
+  alertname=AlertmanagerSmokeTest
+
+Expected:
+
+platform-email
+Verify notification failures
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  wget -qO- http://localhost:9093/metrics |
+  grep 'alertmanager_notification_requests_failed_total{integration="email"}'
+
+Expected:
+
+... 0
+Expire the test
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-alertmanager-0 \
+  -c alertmanager -- \
+  amtool alert expire \
+  'alertname="AlertmanagerSmokeTest"' \
+  --alertmanager.url=http://localhost:9093
+
+Important: use the actual pod name:
+
+alertmanager-prometheus-stack-kube-prom-alertmanager-0
+
+so the complete command should be:
+
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
+  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
+  -c alertmanager -- \
+  amtool alert expire \
+  'alertname="AlertmanagerSmokeTest"' \
+  --alertmanager.url=http://localhost:9093
+
+Because:
+
+send_resolved: true
+
+you should receive the resolved notification.
+
+45. Lessons Learned
+
+Several important lessons came out of this implementation.
+
+1. Helm .Files.Get does not automatically evaluate Helm expressions
+
+Use:
+
+tpl (.Files.Get "file") .
+
+when a file contains Helm template expressions.
+
+2. Alertmanager template context matters
+
+Top-level:
+
+.CommonLabels
+.CommonAnnotations
+.Status
+
+Individual alert:
+
+.StartsAt
+.EndsAt
+.Labels
+.Annotations
+
+Use:
+
+range .Alerts
+
+when accessing individual alert properties.
+
+3. Always validate rendered Helm output
+
+A successful:
+
+helm lint
+
+does not guarantee that the final rendered configuration is exactly what you expect.
+
+Use:
+
+helm template
+
+and inspect the output.
+
+4. Kubernetes generated names matter
+
+Do not assume the StatefulSet name.
+
+Use:
+
+kubectl get statefulsets -n monitoring
+
+before attempting a restart.
+
+5. Git Bash can modify Linux paths
+
+On Windows:
+
+MSYS_NO_PATHCONV=1
+
+can be necessary when using kubectl exec with container paths.
+
+6. Alert existence does not guarantee email delivery
+
+Always verify:
+
+Alert exists
+       ↓
+Route matches
+       ↓
+Receiver = platform-email
+       ↓
+SMTP notification attempted
+       ↓
+No failed notification requests
+       ↓
+Email received
+7. Email spam filtering is separate from SMTP delivery
+
+An email appearing in Yahoo Spam does not mean Alertmanager failed.
+
+If the message arrives in Spam, the SMTP pipeline successfully delivered it.
+
+46. Final State
+
+The completed architecture is:
+
+                         GitHub
+                           │
+                           ▼
+                    enterprise-platform
+                       -gitops
+                           │
+                           ▼
+                        Argo CD
+                           │
+                           ▼
+                monitoring-assets Helm
+                         Chart
+                           │
+             ┌─────────────┴─────────────┐
+             │                           │
+             ▼                           ▼
+      Alertmanager config          Email template
+             │                           │
+             │                     email.tmpl
+             │                           │
+             └─────────────┬─────────────┘
+                           │
+                           ▼
+                     Alertmanager
+                           │
+                 ┌─────────┴─────────┐
+                 │                   │
+                 ▼                   ▼
+          SMTP configuration    SMTP password
+             from Helm          from K8s Secret
+                 │                   ▲
+                 │                   │
+                 │            External Secrets
+                 │                   ▲
+                 │                   │
+                 │          AWS Secrets Manager
+                 │
+                 ▼
+             Brevo SMTP
+                 │
+                 ▼
+             Yahoo Mail
+
+The key security boundary is:
+
+Git → configuration
+AWS Secrets Manager → credentials
+External Secrets → Kubernetes secret
+Alertmanager → notification
+Brevo → SMTP delivery

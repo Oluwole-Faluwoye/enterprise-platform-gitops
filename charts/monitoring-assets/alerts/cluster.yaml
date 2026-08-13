@@ -1,0 +1,106 @@
+groups:
+  - name: cluster-infrastructure
+
+    rules:
+
+      #################################################
+      # Cluster CPU
+      #################################################
+
+      - alert: ClusterHighCPU
+        expr: |
+          cluster:cpu_usage:avg > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Cluster CPU usage is high"
+          description: |
+            Average Kubernetes cluster CPU utilization
+            has remained above 80% for more than 10 minutes.
+
+      - alert: ClusterCriticalCPU
+        expr: |
+          cluster:cpu_usage:avg > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Cluster CPU usage is critically high"
+          description: |
+            Average Kubernetes cluster CPU utilization
+            has remained above 95% for more than 5 minutes.
+
+      #################################################
+      # Cluster Memory
+      #################################################
+
+      - alert: ClusterHighMemory
+        expr: |
+          cluster:memory_usage:ratio > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Cluster memory usage is high"
+          description: |
+            Kubernetes cluster memory utilization
+            has remained above 80% for more than 10 minutes.
+
+      - alert: ClusterCriticalMemory
+        expr: |
+          cluster:memory_usage:ratio > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Cluster memory usage is critically high"
+          description: |
+            Kubernetes cluster memory utilization
+            has remained above 95% for more than 5 minutes.
+
+      #################################################
+      # Cluster Filesystem
+      #################################################
+
+      - alert: ClusterFilesystemAlmostFull
+        expr: |
+          cluster:filesystem_usage:ratio > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Cluster filesystem usage is high"
+          description: |
+            Aggregate Kubernetes cluster filesystem utilization
+            has remained above 85% for more than 10 minutes.
+
+      - alert: ClusterFilesystemCritical
+        expr: |
+          cluster:filesystem_usage:ratio > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Cluster filesystem usage is critically high"
+          description: |
+            Aggregate Kubernetes cluster filesystem utilization
+            has remained above 95% for more than 5 minutes.

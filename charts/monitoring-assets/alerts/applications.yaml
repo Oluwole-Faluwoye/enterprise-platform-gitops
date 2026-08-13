@@ -15,6 +15,7 @@ groups:
           severity: critical
           category: application
           team: platform
+          environment: dev
         annotations:
           summary: "Pod CrashLooping"
           description: |
@@ -33,6 +34,7 @@ groups:
           severity: warning
           category: application
           team: platform
+          environment: dev
         annotations:
           summary: "Frequent Pod Restarts"
           description: |
@@ -51,6 +53,7 @@ groups:
           severity: critical
           category: application
           team: platform
+          environment: dev
         annotations:
           summary: "Deployment Unavailable"
           description: |
@@ -69,8 +72,165 @@ groups:
           severity: warning
           category: application
           team: platform
+          environment: dev
         annotations:
           summary: "Deployment Replica Mismatch"
           description: |
             Deployment {{ $labels.namespace }}/{{ $labels.deployment }}
             has not completed rollout successfully.
+
+      #################################################
+      # HTTP 5xx Error Rate
+      #################################################
+
+      - alert: ApplicationHighErrorRate
+        expr: |
+          application:http_5xx_rate > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          category: application
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Application HTTP 5xx error rate is high"
+          description: |
+            Application {{ $labels.application }}
+            has an HTTP 5xx error rate above 5% for more than 10 minutes.
+
+      #################################################
+      # HTTP 5xx Critical
+      #################################################
+
+      - alert: ApplicationCriticalErrorRate
+        expr: |
+          application:http_5xx_rate > 0.15
+        for: 5m
+        labels:
+          severity: critical
+          category: application
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Application HTTP 5xx error rate is critical"
+          description: |
+            Application {{ $labels.application }}
+            has an HTTP 5xx error rate above 15% for more than 5 minutes.
+
+      #################################################
+      # HTTP Latency
+      #################################################
+
+      - alert: ApplicationHighLatency
+        expr: |
+          application:http_latency_seconds > 1
+        for: 10m
+        labels:
+          severity: warning
+          category: application
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Application HTTP latency is high"
+          description: |
+            Application {{ $labels.application }}
+            has an average HTTP response latency above 1 second
+            for more than 10 minutes.
+
+      #################################################
+      # HTTP Latency Critical
+      #################################################
+
+      - alert: ApplicationCriticalLatency
+        expr: |
+          application:http_latency_seconds > 2
+        for: 5m
+        labels:
+          severity: critical
+          category: application
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Application HTTP latency is critical"
+          description: |
+            Application {{ $labels.application }}
+            has an average HTTP response latency above 2 seconds
+            for more than 5 minutes.
+
+      #################################################
+      # JVM Heap Usage
+      #################################################
+
+      - alert: ApplicationHighJVMHeap
+        expr: |
+          application:jvm_heap_usage > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          category: application
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Application JVM heap usage is high"
+          description: |
+            Application {{ $labels.application }}
+            is using more than 80% of its JVM heap for more than
+            10 minutes.
+
+      #################################################
+      # JVM Heap Critical
+      #################################################
+
+      - alert: ApplicationCriticalJVMHeap
+        expr: |
+          application:jvm_heap_usage > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          category: application
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Application JVM heap usage is critical"
+          description: |
+            Application {{ $labels.application }}
+            is using more than 95% of its JVM heap for more than
+            5 minutes.
+
+      #################################################
+      # Application CPU
+      #################################################
+
+      - alert: ApplicationHighCPU
+        expr: |
+          application:cpu_usage > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          category: application
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Application CPU usage is high"
+          description: |
+            Application {{ $labels.application }}
+            has CPU utilization above 80% for more than 10 minutes.
+
+      #################################################
+      # Application CPU Critical
+      #################################################
+
+      - alert: ApplicationCriticalCPU
+        expr: |
+          application:cpu_usage > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          category: application
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Application CPU usage is critical"
+          description: |
+            Application {{ $labels.application }}
+            has CPU utilization above 95% for more than 5 minutes.

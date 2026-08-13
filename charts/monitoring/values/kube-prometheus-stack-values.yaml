@@ -101,39 +101,6 @@ alertmanager:
     configMaps:
       - alertmanager-templates
 
-    containers:
-      - name: alertmanager
-        env:
-          - name: SMTP_HOST
-            valueFrom:
-              secretKeyRef:
-                name: alertmanager-secret
-                key: smtp-host
-
-          - name: SMTP_PORT
-            valueFrom:
-              secretKeyRef:
-                name: alertmanager-secret
-                key: smtp-port
-
-          - name: SMTP_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: alertmanager-secret
-                key: smtp-username
-
-          - name: SMTP_FROM
-            valueFrom:
-              secretKeyRef:
-                name: alertmanager-secret
-                key: smtp-from
-
-          - name: SMTP_TO
-            valueFrom:
-              secretKeyRef:
-                name: alertmanager-secret
-                key: smtp-to
-
     resources:
       requests:
         cpu: 100m

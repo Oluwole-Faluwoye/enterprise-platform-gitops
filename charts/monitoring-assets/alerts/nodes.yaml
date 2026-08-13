@@ -15,6 +15,7 @@ groups:
           severity: critical
           category: infrastructure
           team: platform
+          environment: dev
         annotations:
           summary: "Node Not Ready"
           description: |
@@ -34,6 +35,7 @@ groups:
           severity: warning
           category: infrastructure
           team: platform
+          environment: dev
         annotations:
           summary: "Node Memory Pressure"
           description: |
@@ -51,6 +53,7 @@ groups:
           severity: warning
           category: infrastructure
           team: platform
+          environment: dev
         annotations:
           summary: "Node Disk Pressure"
           description: |
@@ -68,6 +71,7 @@ groups:
           severity: warning
           category: infrastructure
           team: platform
+          environment: dev
         annotations:
           summary: "Node PID Pressure"
           description: |
@@ -85,7 +89,121 @@ groups:
           severity: critical
           category: networking
           team: platform
+          environment: dev
         annotations:
           summary: "Node Network Unavailable"
           description: |
             Kubernetes node {{ $labels.node }} has no network connectivity.
+      #################################################
+      # CPU Usage - Warning
+      #################################################
+
+      - alert: NodeHighCPU
+        expr: |
+          node:cpu_usage > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node CPU usage is high"
+          description: |
+            Kubernetes node {{ $labels.instance }}
+            has CPU utilization above 80% for more than 10 minutes.
+
+      #################################################
+      # CPU Usage - Critical
+      #################################################
+
+      - alert: NodeCriticalCPU
+        expr: |
+          node:cpu_usage > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node CPU usage is critically high"
+          description: |
+            Kubernetes node {{ $labels.instance }}
+            has CPU utilization above 95% for more than 5 minutes.
+
+      #################################################
+      # Memory Usage - Warning
+      #################################################
+
+      - alert: NodeHighMemory
+        expr: |
+          node:memory_usage > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node memory usage is high"
+          description: |
+            Kubernetes node {{ $labels.instance }}
+            has memory utilization above 80% for more than 10 minutes.
+
+      #################################################
+      # Memory Usage - Critical
+      #################################################
+
+      - alert: NodeCriticalMemory
+        expr: |
+          node:memory_usage > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node memory usage is critically high"
+          description: |
+            Kubernetes node {{ $labels.instance }}
+            has memory utilization above 95% for more than 5 minutes.
+
+      #################################################
+      # Filesystem Usage - Warning
+      #################################################
+
+      - alert: NodeFilesystemAlmostFull
+        expr: |
+          node:filesystem_usage > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node filesystem is almost full"
+          description: |
+            Filesystem {{ $labels.mountpoint }} on node
+            {{ $labels.instance }} is more than 85% full.
+
+      #################################################
+      # Filesystem Usage - Critical
+      #################################################
+
+      - alert: NodeFilesystemCritical
+        expr: |
+          node:filesystem_usage > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Node filesystem is critically full"
+          description: |
+            Filesystem {{ $labels.mountpoint }} on node
+            {{ $labels.instance }} is more than 95% full.

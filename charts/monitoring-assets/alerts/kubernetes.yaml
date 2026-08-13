@@ -1,0 +1,89 @@
+groups:
+  - name: kubernetes-workloads
+
+    rules:
+
+      #################################################
+      # Pod Pending
+      #################################################
+
+      - alert: PodPendingTooLong
+        expr: |
+          kube_pod_status_phase{
+            phase="Pending"
+          } == 1
+        for: 10m
+        labels:
+          severity: warning
+          category: kubernetes
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Pod pending for too long"
+          description: |
+            Pod {{ $labels.namespace }}/{{ $labels.pod }}
+            has remained in Pending state for more than 10 minutes.
+
+      #################################################
+      # Pod Not Ready
+      #################################################
+
+      - alert: PodNotReady
+        expr: |
+          kube_pod_status_ready{
+            condition="false"
+          } == 1
+        for: 10m
+        labels:
+          severity: warning
+          category: kubernetes
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Pod is not ready"
+          description: |
+            Pod {{ $labels.namespace }}/{{ $labels.pod }}
+            has not been Ready for more than 10 minutes.
+
+      #################################################
+      # Container OOMKilled
+      #################################################
+
+      - alert: ContainerOOMKilled
+        expr: |
+          increase(
+            kube_pod_container_status_last_terminated_reason{
+              reason="OOMKilled"
+            }[10m]
+          ) > 0
+        for: 0m
+        labels:
+          severity: critical
+          category: kubernetes
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Container killed due to OOM"
+          description: |
+            Container {{ $labels.container }}
+            in pod {{ $labels.namespace }}/{{ $labels.pod }}
+            was terminated because of an out-of-memory condition.
+
+      #################################################
+      # Job Failed
+      #################################################
+
+      - alert: KubernetesJobFailed
+        expr: |
+          kube_job_status_failed > 0
+        for: 5m
+        labels:
+          severity: warning
+          category: kubernetes
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Kubernetes Job failed"
+          description: |
+            Kubernetes Job {{ $labels.namespace }}/{{ $labels.job_name }}
+            has reported one or more failed executions.

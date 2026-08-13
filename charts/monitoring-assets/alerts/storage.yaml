@@ -1,0 +1,64 @@
+groups:
+
+  - name: kubernetes-storage
+
+    rules:
+
+      #################################################
+      # PVC Storage Warning
+      #################################################
+
+      - alert: PVCStorageAlmostFull
+        expr: |
+          pvc:storage_usage_ratio > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          category: storage
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Persistent volume claim storage is almost full"
+          description: |
+            PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}
+            is using more than 80% of its allocated storage
+            for more than 10 minutes.
+
+      #################################################
+      # PVC Storage Critical
+      #################################################
+
+      - alert: PVCStorageCritical
+        expr: |
+          pvc:storage_usage_ratio > 0.90
+        for: 5m
+        labels:
+          severity: critical
+          category: storage
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Persistent volume claim storage is critically full"
+          description: |
+            PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}
+            is using more than 90% of its allocated storage
+            for more than 5 minutes.
+
+      #################################################
+      # PVC Storage Completely Full
+      #################################################
+
+      - alert: PVCStorageFull
+        expr: |
+          pvc:storage_usage_ratio > 0.98
+        for: 2m
+        labels:
+          severity: critical
+          category: storage
+          team: platform
+          environment: dev
+        annotations:
+          summary: "Persistent volume claim is nearly full"
+          description: |
+            PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}
+            is using more than 98% of its allocated storage.

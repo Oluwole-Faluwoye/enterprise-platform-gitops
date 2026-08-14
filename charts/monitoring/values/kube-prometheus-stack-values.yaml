@@ -2,7 +2,8 @@ defaultRules:
   create: true
   rules:
     kubeControllerManager: false
-    kubeScheduler: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
 
 grafana:
   enabled: true

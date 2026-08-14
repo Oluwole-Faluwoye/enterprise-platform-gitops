@@ -17,6 +17,7 @@ metadata:
 {{ include "monitoring-assets.labels" $ | indent 4 }}
 
     app.kubernetes.io/component: prometheus-rules
+    release: prometheus-stack
 
 spec:
 {{ $content | indent 2 }}

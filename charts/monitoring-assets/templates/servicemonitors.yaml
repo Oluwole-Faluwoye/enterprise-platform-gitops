@@ -1,0 +1,13 @@
+{{- range $path, $_ := .Files.Glob "servicemonitors/*.yaml" }}
+
+{{- $content := $.Files.Get $path }}
+
+{{- if trim $content }}
+
+{{ $content }}
+
+---
+
+{{- end }}
+
+{{- end }}

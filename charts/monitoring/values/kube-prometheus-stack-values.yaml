@@ -1,3 +1,9 @@
+defaultRules:
+  create: true
+  rules:
+    kubeControllerManager: false
+    kubeScheduler: false
+
 grafana:
   enabled: true
   deploymentStrategy:

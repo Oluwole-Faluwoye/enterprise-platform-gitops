@@ -13,7 +13,6 @@ spec:
     matchLabels:
       app.kubernetes.io/name: loki
       app.kubernetes.io/instance: loki
-      app.kubernetes.io/component: single-binary
   endpoints:
     - port: http-metrics
       path: /metrics

@@ -1,6 +1,5 @@
 grafana:
   enabled: true
-
   deploymentStrategy:
     type: Recreate
   ingress:
@@ -12,7 +11,7 @@ grafana:
       alb.ingress.kubernetes.io/target-type: ip
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
       alb.ingress.kubernetes.io/ssl-redirect: "443"
-      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018849945:certificate/34825b11-fc08-4d5e-ad45-9b0a0ca323f0
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018849945:certificate/de6a710c-c7ed-4c3d-84bc-1873b0848495
     hosts:
       - grafana.dev.dreammyles.online
     path: /
@@ -51,10 +50,8 @@ grafana:
       defaultDatasourceEnabled: false
       label: grafana_datasource
       labelValue: "1"
-  
   plugins:
     - grafana-piechart-panel
-        
 ################################################################################
 # Prometheus
 ################################################################################
@@ -88,19 +85,14 @@ prometheus:
 alertmanager:
   enabled: true
   namespaceOverride: monitoring
-
   alertmanagerSpec:
     replicas: 1
     retention: 120h
-
     configSecret: alertmanager-config
-
     secrets:
       - alertmanager-secret
-
     configMaps:
       - alertmanager-templates
-
     resources:
       requests:
         cpu: 100m
@@ -108,7 +100,6 @@ alertmanager:
       limits:
         cpu: 500m
         memory: 512Mi
-
     storage:
       volumeClaimTemplate:
         spec:

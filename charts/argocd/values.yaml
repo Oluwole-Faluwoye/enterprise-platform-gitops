@@ -14,7 +14,7 @@ server:
       alb.ingress.kubernetes.io/backend-protocol: HTTP
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
       alb.ingress.kubernetes.io/ssl-redirect: "443"
-      alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:761018849945:certificate/de6a710c-c7ed-4c3d-84bc-1873b0848495"
+      alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:761018849945:certificate/2c6a4e8c-6a1c-4c73-9705-f93d31019c4c"
       external-dns.alpha.kubernetes.io/hostname: "argocd.dev.dreammyles.online"
     tls: false
   metrics:

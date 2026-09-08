@@ -1,4 +1,4 @@
-clusterName: devops-cluster
+clusterName: enterprise-platform-dev
 region: us-east-1
 vpcId: ""
 serviceAccount:

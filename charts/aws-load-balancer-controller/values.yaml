@@ -1,6 +1,6 @@
 clusterName: enterprise-platform-dev
 region: us-east-1
-vpcId: vpc-045bc06f28ff92c9
+vpcId: vpc-045bc06f28ff92c9b
 serviceAccount:
   create: true
   name: aws-load-balancer-controller

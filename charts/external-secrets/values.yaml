@@ -30,10 +30,14 @@ refreshInterval: 1h
 
 secrets:
 
-  authService:
-    namespace: auth
+  application:
+    namespace: identity
     awsSecret: auth-service
-    targetSecret: auth-service-secret
+    targetSecret: auth-service-app-secret
+
+  database:
+    namespace: identity
+    targetSecret: auth-service-database-secret
 
   grafana:
     namespace: monitoring

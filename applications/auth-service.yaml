@@ -26,10 +26,10 @@ spec:
         - values-dev.yaml
 
   destination:
-
+  
     server: https://kubernetes.default.svc
 
-    namespace: auth
+    namespace: identity
 
   syncPolicy:
 

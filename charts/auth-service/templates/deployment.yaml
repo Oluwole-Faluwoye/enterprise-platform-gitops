@@ -71,17 +71,11 @@ spec:
           env:
 
             {{- range .Values.env }}
-
             - name: {{ .name }}
-
               valueFrom:
-
                 secretKeyRef:
-
-                  name: {{ $.Values.secrets.authService.kubernetesSecret }}
-
+                  name: {{ .secretName }}
                   key: {{ .secretKey }}
-
             {{- end }}
 
           {{- with .Values.livenessProbe }}

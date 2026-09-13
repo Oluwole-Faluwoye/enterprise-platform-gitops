@@ -1,0 +1,11 @@
+# Local secrets
+.env
+.env.*
+*.secret
+*.secrets
+*.secret.json
+*.secrets.json
+
+# Local secret files
+secrets/
+local-secrets/

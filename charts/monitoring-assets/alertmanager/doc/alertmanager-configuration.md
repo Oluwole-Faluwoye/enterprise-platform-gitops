@@ -1,5 +1,6 @@
 Alertmanager Configuration, SMTP Integration & Troubleshooting
-1. Overview
+
+Overview
 
 This document describes the implementation of Alertmanager email notifications for the Enterprise Platform monitoring stack.
 
@@ -19,42 +20,42 @@ Custom Alertmanager email templates
 The design follows GitOps principles:
 
 Git
- │
- ├── Alertmanager configuration
- ├── Helm values
- ├── Alertmanager email templates
- └── Kubernetes manifests
-        │
-        ▼
-      Argo CD
-        │
-        ▼
-    Kubernetes
+│
+├── Alertmanager configuration
+├── Helm values
+├── Alertmanager email templates
+└── Kubernetes manifests
+│
+▼
+Argo CD
+│
+▼
+Kubernetes
 
 Sensitive SMTP credentials are not stored in Git.
 
 Instead:
 
 AWS Secrets Manager
-        │
-        ▼
+│
+▼
 External Secrets Operator
-        │
-        ▼
+│
+▼
 Kubernetes Secret
-        │
-        ▼
+│
+▼
 Alertmanager
-        │
-        ▼
+│
+▼
 Brevo SMTP
-        │
-        ▼
+│
+▼
 Email recipient
 
 The final implementation was tested end-to-end and successfully delivered Alertmanager emails through Brevo to Yahoo Mail.
 
-2. Final Architecture
+Final Architecture
 
 The final architecture consists of two separate configuration paths.
 
@@ -63,58 +64,58 @@ Configuration
 Non-sensitive configuration is managed through Git:
 
 GitHub
-   │
-   ▼
+│
+▼
 enterprise-platform-gitops
-   │
-   ▼
+│
+▼
 Argo CD
-   │
-   ▼
+│
+▼
 monitoring-assets Helm chart
-   │
-   ├── Alertmanager configuration
-   ├── SMTP host
-   ├── SMTP port
-   ├── SMTP username
-   ├── SMTP from
-   ├── SMTP recipient
-   └── email.tmpl
+│
+├── Alertmanager configuration
+├── SMTP host
+├── SMTP port
+├── SMTP username
+├── SMTP from
+├── SMTP recipient
+└── email.tmpl
 Secret
 
 The SMTP password is managed separately:
 
 AWS Secrets Manager
-        │
-        │
-        ▼
+│
+│
+▼
 External Secrets Operator
-        │
-        ▼
+│
+▼
 Kubernetes Secret
 alertmanager-secret
-        │
-        ▼
+│
+▼
 /etc/alertmanager/secrets/alertmanager-secret/smtp-password
-        │
-        ▼
+│
+▼
 Alertmanager
 Notification flow
 Prometheus
-    │
-    │ Alert fires
-    ▼
+│
+│ Alert fires
+▼
 Alertmanager
-    │
-    │ Route based on severity
-    ▼
+│
+│ Route based on severity
+▼
 platform-email
-    │
-    │ SMTP :587
-    ▼
+│
+│ SMTP :587
+▼
 Brevo
-    │
-    ▼
+│
+▼
 Yahoo Mail
 3. Repository Structure
 
@@ -164,19 +165,19 @@ charts/monitoring-assets/values.yaml
 The structure is:
 
 alertmanager:
-  smtp:
-    host: smtp-relay.brevo.com
-    port: 587
-    username: YOUR_SMTP_USERNAME
-    from: alerts@example.com
-    to: recipient@example.com
+smtp:
+host: smtp-relay.brevo.com
+port: 587
+username: YOUR_SMTP_USERNAME
+from: alerts@example.com
+to: recipient@example.com
 Important
 
 The SMTP password is not placed in values.yaml.
 
 The password remains in AWS Secrets Manager and is synchronized into Kubernetes by External Secrets Operator.
 
-5. SMTP Configuration Values
+SMTP Configuration Values
 
 The SMTP configuration contains:
 
@@ -196,7 +197,7 @@ TLS: enabled
 
 The SMTP password is provided to Alertmanager through a mounted Kubernetes Secret.
 
-6. AWS Secrets Manager
+AWS Secrets Manager
 
 The Alertmanager secret is stored in AWS Secrets Manager under:
 
@@ -205,12 +206,12 @@ enterprise-platform/dev/alertmanager
 The secret contains:
 
 {
-  "smtp-host": "...",
-  "smtp-port": "...",
-  "smtp-username": "...",
-  "smtp-password": "...",
-  "smtp-from": "...",
-  "smtp-to": "..."
+"smtp-host": "...",
+"smtp-port": "...",
+"smtp-username": "...",
+"smtp-password": "...",
+"smtp-from": "...",
+"smtp-to": "..."
 }
 Security principle
 
@@ -282,22 +283,23 @@ The receiver uses:
 
 receivers:
 
-  - name: default
+name: default
 
-  - name: platform-email
-    email_configs:
-      - to: "{{ .Values.alertmanager.smtp.to }}"
-        from: "{{ .Values.alertmanager.smtp.from }}"
-        smarthost: "{{ .Values.alertmanager.smtp.host }}:{{ .Values.alertmanager.smtp.port }}"
-        auth_username: "{{ .Values.alertmanager.smtp.username }}"
-        auth_password_file: "/etc/alertmanager/secrets/alertmanager-secret/smtp-password"
-        require_tls: true
-        send_resolved: true
+name: platform-email
+email_configs:
+
+to: "{{ .Values.alertmanager.smtp.to }}"
+from: "{{ .Values.alertmanager.smtp.from }}"
+smarthost: "{{ .Values.alertmanager.smtp.host }}:{{ .Values.alertmanager.smtp.port }}"
+auth_username: "{{ .Values.alertmanager.smtp.username }}"
+auth_password_file: "/etc/alertmanager/secrets/alertmanager-secret/smtp-password"
+require_tls: true
+send_resolved: true
 
 The important security decision is:
 
 auth_password_file:
-  /etc/alertmanager/secrets/alertmanager-secret/smtp-password
+/etc/alertmanager/secrets/alertmanager-secret/smtp-password
 
 rather than:
 
@@ -344,19 +346,19 @@ This allowed:
 
 to be rendered correctly.
 
-11. Helm Values Structure
+Helm Values Structure
 
 The values must have the correct hierarchy.
 
 Correct:
 
 alertmanager:
-  smtp:
-    host: smtp-relay.brevo.com
-    port: 587
-    username: YOUR_USERNAME
-    from: alerts@example.com
-    to: recipient@example.com
+smtp:
+host: smtp-relay.brevo.com
+port: 587
+username: YOUR_USERNAME
+from: alerts@example.com
+to: recipient@example.com
 
 A missing hierarchy can result in errors such as:
 
@@ -364,7 +366,7 @@ nil pointer evaluating interface {}.smtp
 
 Therefore, when changing Alertmanager values, verify the indentation carefully.
 
-12. Custom Email Template
+Custom Email Template
 
 The custom template is:
 
@@ -394,7 +396,7 @@ Resolved
 
 This makes the notification immediately understandable from the email subject.
 
-13. Email Body
+Email Body
 
 The body includes:
 
@@ -434,7 +436,7 @@ ALERT RESOLVED
 
 is displayed.
 
-14. Critical Template Problem We Encountered
+Critical Template Problem We Encountered
 
 An important Alertmanager template issue occurred with:
 
@@ -475,7 +477,7 @@ are available.
 
 This is an important Alertmanager template rule.
 
-15. Correct Alertmanager Template Scope
+Correct Alertmanager Template Scope
 
 Top-level properties include things such as:
 
@@ -532,17 +534,18 @@ The template is mounted into Alertmanager at:
 The Alertmanager configuration references:
 
 templates:
-  - "/etc/alertmanager/configmaps/alertmanager-templates/*.tmpl"
+
+"/etc/alertmanager/configmaps/alertmanager-templates/*.tmpl"
 
 This mount path was important because the initial assumption about the template path was incorrect.
 
-17. Verifying the Template in Kubernetes
+Verifying the Template in Kubernetes
 
 Check the ConfigMap:
 
-kubectl get configmap alertmanager-templates \
-  -n monitoring \
-  -o jsonpath='{.data.email\.tmpl}'
+kubectl get configmap alertmanager-templates 
+-n monitoring 
+-o jsonpath='{.data.email.tmpl}'
 
 You should see:
 
@@ -554,10 +557,10 @@ define "email.body"
 
 You can also inspect the actual file mounted inside the Alertmanager container:
 
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  cat /etc/alertmanager/configmaps/alertmanager-templates/email.tmpl
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+cat /etc/alertmanager/configmaps/alertmanager-templates/email.tmpl
 18. Important Windows Git Bash Issue
 
 Because the environment is Windows Git Bash, commands containing Linux paths can be modified by MSYS path conversion.
@@ -584,7 +587,7 @@ MSYS_NO_PATHCONV=1 kubectl exec ...
 
 This should be used when executing commands that contain Linux container paths from Git Bash on Windows.
 
-19. Actual Alertmanager StatefulSet Name
+Actual Alertmanager StatefulSet Name
 
 The Alertmanager StatefulSet is:
 
@@ -598,15 +601,15 @@ This is important because the Prometheus stack name is part of the generated res
 
 For example, this is incorrect:
 
-kubectl rollout restart statefulset \
-  prometheus-stack-kube-prom-alertmanager \
-  -n monitoring
+kubectl rollout restart statefulset 
+prometheus-stack-kube-prom-alertmanager 
+-n monitoring
 
 The correct StatefulSet is:
 
-kubectl rollout restart statefulset \
-  alertmanager-prometheus-stack-kube-prom-alertmanager \
-  -n monitoring
+kubectl rollout restart statefulset 
+alertmanager-prometheus-stack-kube-prom-alertmanager 
+-n monitoring
 
 Verify with:
 
@@ -619,24 +622,24 @@ First verify whether the mounted ConfigMap/configuration has already been update
 
 Check:
 
-kubectl get configmap alertmanager-templates \
-  -n monitoring \
-  -o jsonpath='{.data.email\.tmpl}'
+kubectl get configmap alertmanager-templates 
+-n monitoring 
+-o jsonpath='{.data.email.tmpl}'
 
 Then check the mounted file:
 
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  cat /etc/alertmanager/configmaps/alertmanager-templates/email.tmpl
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+cat /etc/alertmanager/configmaps/alertmanager-templates/email.tmpl
 
 If the new template is already present, Alertmanager has access to it.
 
 A restart can still be used when necessary:
 
-kubectl rollout restart statefulset \
-  alertmanager-prometheus-stack-kube-prom-alertmanager \
-  -n monitoring
+kubectl rollout restart statefulset 
+alertmanager-prometheus-stack-kube-prom-alertmanager 
+-n monitoring
 
 Then:
 
@@ -683,7 +686,7 @@ monitoring-assets   Synced   Healthy
 
 If it remains OutOfSync, synchronize monitoring-assets in Argo CD.
 
-22. Helm Validation
+Helm Validation
 
 Before pushing changes:
 
@@ -695,18 +698,20 @@ Expected:
 
 Render:
 
-helm template charts/monitoring-assets \
-  > /tmp/monitoring-assets-rendered.yaml
+helm template charts/monitoring-assets 
+
+
+/tmp/monitoring-assets-rendered.yaml
 
 Inspect the receiver:
 
-grep -n -A20 "platform-email" \
-  /tmp/monitoring-assets-rendered.yaml
+grep -n -A20 "platform-email" 
+/tmp/monitoring-assets-rendered.yaml
 
 Inspect the template:
 
-grep -n -A80 "email.tmpl:" \
-  /tmp/monitoring-assets-rendered.yaml
+grep -n -A80 "email.tmpl:" 
+/tmp/monitoring-assets-rendered.yaml
 
 Verify the template contains:
 
@@ -719,32 +724,33 @@ range .Alerts
 
 Run:
 
-grep -n -A15 "name: platform-email" \
-  /tmp/monitoring-assets-rendered.yaml
+grep -n -A15 "name: platform-email" 
+/tmp/monitoring-assets-rendered.yaml
 
 Expected structure:
 
-- name: platform-email
-  email_configs:
-    - to: "..."
-      from: "..."
-      smarthost: "smtp-relay.brevo.com:587"
-      auth_username: "..."
-      auth_password_file: "/etc/alertmanager/secrets/alertmanager-secret/smtp-password"
-      require_tls: true
-      send_resolved: true
+name: platform-email
+email_configs:
+
+to: "..."
+from: "..."
+smarthost: "smtp-relay.brevo.com:587"
+auth_username: "..."
+auth_password_file: "/etc/alertmanager/secrets/alertmanager-secret/smtp-password"
+require_tls: true
+send_resolved: true
 
 Do not print or commit the actual SMTP password.
 
-24. Verify Alertmanager Configuration in the Pod
+Verify Alertmanager Configuration in the Pod
 
 Run:
 
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  grep -n -A15 -B5 "platform-email" \
-  /etc/alertmanager/config_out/alertmanager.env.yaml
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+grep -n -A15 -B5 "platform-email" 
+/etc/alertmanager/config_out/alertmanager.env.yaml
 
 You should see:
 
@@ -761,8 +767,10 @@ auth_password_file:
 and:
 
 templates:
-- /etc/alertmanager/configmaps/alertmanager-templates/*.tmpl
-25. Verify Alertmanager Health
+
+/etc/alertmanager/configmaps/alertmanager-templates/*.tmpl
+
+Verify Alertmanager Health
 
 Check the pod:
 
@@ -786,16 +794,16 @@ AVAILABLE   True
 
 Use:
 
-kubectl logs -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager --since=10m
+kubectl logs -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager --since=10m
 
 Filter for notification problems:
 
-kubectl logs -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager --since=10m |
-  grep -iE "notify|error|smtp|email|platform-email"
+kubectl logs -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager --since=10m |
+grep -iE "notify|error|smtp|email|platform-email"
 
 Successful configuration loading looks like:
 
@@ -813,15 +821,15 @@ If that appears again, inspect email.tmpl and verify .StartsAt is inside:
 
 Use:
 
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  amtool config routes test \
-  --alertmanager.url=http://localhost:9093 \
-  severity=warning \
-  namespace=monitoring \
-  team=platform \
-  alertname=TestAlert
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+amtool config routes test 
+--alertmanager.url=http://localhost:9093 
+severity=warning 
+namespace=monitoring 
+team=platform 
+alertname=TestAlert
 
 For a warning alert, the expected receiver is:
 
@@ -829,23 +837,23 @@ platform-email
 
 This is an important troubleshooting step because an alert can exist in Alertmanager but still not be routed to email.
 
-28. Firing a Manual Test Alert
+Firing a Manual Test Alert
 
 The most reliable method used during testing was amtool.
 
 Use:
 
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  amtool alert add AlertmanagerSubjectTest \
-  'severity=warning' \
-  'namespace=monitoring' \
-  'team=platform' \
-  'environment=dev' \
-  --annotation='summary=Subject Test' \
-  --annotation='description=Testing dynamic firing and resolved subjects' \
-  --alertmanager.url=http://localhost:9093
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+amtool alert add AlertmanagerSubjectTest 
+'severity=warning' 
+'namespace=monitoring' 
+'team=platform' 
+'environment=dev' 
+--annotation='summary=Subject Test' 
+--annotation='description=Testing dynamic firing and resolved subjects' 
+--alertmanager.url=http://localhost:9093
 Important Git Bash note
 
 Always use:
@@ -854,7 +862,7 @@ MSYS_NO_PATHCONV=1
 
 when necessary on Windows Git Bash.
 
-29. amtool Parser Warning
+amtool Parser Warning
 
 During testing, commands containing spaces in annotations produced warnings such as:
 
@@ -882,16 +890,16 @@ and:
 
 The warning can still appear depending on the Alertmanager/amtool version, but it does not necessarily indicate notification failure.
 
-30. Verify the Test Alert
+Verify the Test Alert
 
 Query the alert:
 
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  amtool alert query \
-  'alertname="AlertmanagerSubjectTest"' \
-  --alertmanager.url=http://localhost:9093
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+amtool alert query 
+'alertname="AlertmanagerSubjectTest"' 
+--alertmanager.url=http://localhost:9093
 
 Expected:
 
@@ -904,13 +912,13 @@ active
 
 Use:
 
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  amtool alert query \
-  'alertname="AlertmanagerSubjectTest"' \
-  --alertmanager.url=http://localhost:9093 \
-  -o extended
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+amtool alert query 
+'alertname="AlertmanagerSubjectTest"' 
+--alertmanager.url=http://localhost:9093 
+-o extended
 
 This displays:
 
@@ -931,17 +939,17 @@ description
 
 were actually attached to the alert.
 
-32. Verify Email Delivery Through Metrics
+Verify Email Delivery Through Metrics
 
 Alertmanager exposes notification metrics.
 
 Check successful email notification attempts:
 
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  wget -qO- http://localhost:9093/metrics |
-  grep 'alertmanager_notifications_total{integration="email"}'
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+wget -qO- http://localhost:9093/metrics |
+grep 'alertmanager_notifications_total{integration="email"}'
 
 Example:
 
@@ -949,15 +957,15 @@ alertmanager_notifications_total{integration="email"} 8
 
 The exact number will change as more notifications are sent.
 
-33. Check for Failed Email Notifications
+Check for Failed Email Notifications
 
 Run:
 
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  wget -qO- http://localhost:9093/metrics |
-  grep 'alertmanager_notification_requests_failed_total{integration="email"}'
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+wget -qO- http://localhost:9093/metrics |
+grep 'alertmanager_notification_requests_failed_total{integration="email"}'
 
 The desired result is:
 
@@ -967,7 +975,7 @@ This was successfully achieved during testing.
 
 This is one of the strongest indicators that the SMTP delivery mechanism itself is working.
 
-34. Troubleshooting: Email Not Received
+Troubleshooting: Email Not Received
 
 If an alert exists but no email arrives, troubleshoot in this order.
 
@@ -1003,7 +1011,7 @@ This does not necessarily indicate an Alertmanager or SMTP failure.
 
 If the email exists in Spam, SMTP delivery succeeded.
 
-35. Yahoo Mail / Spam Behavior
+Yahoo Mail / Spam Behavior
 
 During testing, Alertmanager emails were successfully delivered to Yahoo Mail but some messages initially appeared in Spam.
 
@@ -1028,22 +1036,22 @@ For production, use a properly authenticated organizational domain.
 
 Check the ConfigMap:
 
-kubectl get configmap alertmanager-templates \
-  -n monitoring \
-  -o jsonpath='{.data.email\.tmpl}'
+kubectl get configmap alertmanager-templates 
+-n monitoring 
+-o jsonpath='{.data.email.tmpl}'
 
 Then check the mounted file:
 
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  cat /etc/alertmanager/configmaps/alertmanager-templates/email.tmpl
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+cat /etc/alertmanager/configmaps/alertmanager-templates/email.tmpl
 
 If the ConfigMap contains the new template but the mounted file does not, investigate the pod/mount.
 
 If both contain the new template, the template is available to Alertmanager.
 
-37. Troubleshooting: Template Error
+Troubleshooting: Template Error
 
 If logs contain:
 
@@ -1073,7 +1081,7 @@ Started:
 
 at the top level.
 
-38. Troubleshooting: StatefulSet Not Found
+Troubleshooting: StatefulSet Not Found
 
 If:
 
@@ -1121,59 +1129,74 @@ helm lint charts/monitoring-assets
 
 then:
 
-helm template charts/monitoring-assets \
-  > /tmp/monitoring-assets-rendered.yaml
+helm template charts/monitoring-assets 
+
+
+/tmp/monitoring-assets-rendered.yaml
 
 Check the SMTP receiver:
 
-grep -n -A20 "platform-email" \
-  /tmp/monitoring-assets-rendered.yaml
+grep -n -A20 "platform-email" 
+/tmp/monitoring-assets-rendered.yaml
 
 Check the template:
 
-grep -n "StartsAt" \
-  /tmp/monitoring-assets-rendered.yaml
+grep -n "StartsAt" 
+/tmp/monitoring-assets-rendered.yaml
 
 Check for accidental unresolved Helm variables:
 
-grep -n '\${SMTP_' \
-  /tmp/monitoring-assets-rendered.yaml
+grep -n '${SMTP_' 
+/tmp/monitoring-assets-rendered.yaml
 
 The output should be empty if no unresolved ${SMTP_*} placeholders are being used.
 
-41. GitOps Deployment Workflow
+GitOps Deployment Workflow
 
 The normal workflow is:
 
-1. Modify Helm configuration
-        ↓
-2. helm lint
-        ↓
-3. helm template
-        ↓
-4. Inspect rendered configuration
-        ↓
-5. git diff --check
-        ↓
-6. git add
-        ↓
-7. git commit
-        ↓
-8. git push
-        ↓
-9. Argo CD sync
-        ↓
-10. Verify Kubernetes resources
-        ↓
-11. Test Alertmanager
-        ↓
-12. Verify email
+Modify Helm configuration
+↓
+
+helm lint
+↓
+
+helm template
+↓
+
+Inspect rendered configuration
+↓
+
+git diff --check
+↓
+
+git add
+↓
+
+git commit
+↓
+
+git push
+↓
+
+Argo CD sync
+↓
+
+Verify Kubernetes resources
+↓
+
+Test Alertmanager
+↓
+
+Verify email
 
 Example:
 
 helm lint charts/monitoring-assets
-helm template charts/monitoring-assets \
-  > /tmp/monitoring-assets-rendered.yaml
+helm template charts/monitoring-assets 
+
+
+/tmp/monitoring-assets-rendered.yaml
 git diff --check
 git status
 
@@ -1232,60 +1255,60 @@ Namespace
 
 without opening the email.
 
-44. Final Testing Procedure
+Final Testing Procedure
 
 For a quick future smoke test:
 
 Create alert
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  amtool alert add AlertmanagerSmokeTest \
-  'severity=warning' \
-  'namespace=monitoring' \
-  'team=platform' \
-  'environment=dev' \
-  --annotation='summary=Alertmanager Smoke Test' \
-  --annotation='description=Testing Alertmanager email delivery' \
-  --alertmanager.url=http://localhost:9093
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+amtool alert add AlertmanagerSmokeTest 
+'severity=warning' 
+'namespace=monitoring' 
+'team=platform' 
+'environment=dev' 
+--annotation='summary=Alertmanager Smoke Test' 
+--annotation='description=Testing Alertmanager email delivery' 
+--alertmanager.url=http://localhost:9093
 Verify alert
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  amtool alert query \
-  'alertname="AlertmanagerSmokeTest"' \
-  --alertmanager.url=http://localhost:9093
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+amtool alert query 
+'alertname="AlertmanagerSmokeTest"' 
+--alertmanager.url=http://localhost:9093
 Verify routing
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  amtool config routes test \
-  --alertmanager.url=http://localhost:9093 \
-  severity=warning \
-  namespace=monitoring \
-  team=platform \
-  alertname=AlertmanagerSmokeTest
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+amtool config routes test 
+--alertmanager.url=http://localhost:9093 
+severity=warning 
+namespace=monitoring 
+team=platform 
+alertname=AlertmanagerSmokeTest
 
 Expected:
 
 platform-email
 Verify notification failures
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  wget -qO- http://localhost:9093/metrics |
-  grep 'alertmanager_notification_requests_failed_total{integration="email"}'
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+wget -qO- http://localhost:9093/metrics |
+grep 'alertmanager_notification_requests_failed_total{integration="email"}'
 
 Expected:
 
 ... 0
 Expire the test
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-alertmanager-0 \
-  -c alertmanager -- \
-  amtool alert expire \
-  'alertname="AlertmanagerSmokeTest"' \
-  --alertmanager.url=http://localhost:9093
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-alertmanager-0 
+-c alertmanager -- 
+amtool alert expire 
+'alertname="AlertmanagerSmokeTest"' 
+--alertmanager.url=http://localhost:9093
 
 Important: use the actual pod name:
 
@@ -1293,12 +1316,12 @@ alertmanager-prometheus-stack-kube-prom-alertmanager-0
 
 so the complete command should be:
 
-MSYS_NO_PATHCONV=1 kubectl exec -n monitoring \
-  alertmanager-prometheus-stack-kube-prom-alertmanager-0 \
-  -c alertmanager -- \
-  amtool alert expire \
-  'alertname="AlertmanagerSmokeTest"' \
-  --alertmanager.url=http://localhost:9093
+MSYS_NO_PATHCONV=1 kubectl exec -n monitoring 
+alertmanager-prometheus-stack-kube-prom-alertmanager-0 
+-c alertmanager -- 
+amtool alert expire 
+'alertname="AlertmanagerSmokeTest"' 
+--alertmanager.url=http://localhost:9093
 
 Because:
 
@@ -1306,11 +1329,11 @@ send_resolved: true
 
 you should receive the resolved notification.
 
-45. Lessons Learned
+Lessons Learned
 
 Several important lessons came out of this implementation.
 
-1. Helm .Files.Get does not automatically evaluate Helm expressions
+Helm .Files.Get does not automatically evaluate Helm expressions
 
 Use:
 
@@ -1318,7 +1341,7 @@ tpl (.Files.Get "file") .
 
 when a file contains Helm template expressions.
 
-2. Alertmanager template context matters
+Alertmanager template context matters
 
 Top-level:
 
@@ -1339,7 +1362,7 @@ range .Alerts
 
 when accessing individual alert properties.
 
-3. Always validate rendered Helm output
+Always validate rendered Helm output
 
 A successful:
 
@@ -1353,7 +1376,7 @@ helm template
 
 and inspect the output.
 
-4. Kubernetes generated names matter
+Kubernetes generated names matter
 
 Do not assume the StatefulSet name.
 
@@ -1363,7 +1386,7 @@ kubectl get statefulsets -n monitoring
 
 before attempting a restart.
 
-5. Git Bash can modify Linux paths
+Git Bash can modify Linux paths
 
 On Windows:
 
@@ -1371,20 +1394,20 @@ MSYS_NO_PATHCONV=1
 
 can be necessary when using kubectl exec with container paths.
 
-6. Alert existence does not guarantee email delivery
+Alert existence does not guarantee email delivery
 
 Always verify:
 
 Alert exists
-       ↓
+↓
 Route matches
-       ↓
+↓
 Receiver = platform-email
-       ↓
+↓
 SMTP notification attempted
-       ↓
+↓
 No failed notification requests
-       ↓
+↓
 Email received
 7. Email spam filtering is separate from SMTP delivery
 
@@ -1392,52 +1415,52 @@ An email appearing in Yahoo Spam does not mean Alertmanager failed.
 
 If the message arrives in Spam, the SMTP pipeline successfully delivered it.
 
-46. Final State
+Final State
 
 The completed architecture is:
 
-                         GitHub
-                           │
-                           ▼
-                    enterprise-platform
-                       -gitops
-                           │
-                           ▼
-                        Argo CD
-                           │
-                           ▼
-                monitoring-assets Helm
-                         Chart
-                           │
-             ┌─────────────┴─────────────┐
-             │                           │
-             ▼                           ▼
-      Alertmanager config          Email template
-             │                           │
-             │                     email.tmpl
-             │                           │
-             └─────────────┬─────────────┘
-                           │
-                           ▼
-                     Alertmanager
-                           │
-                 ┌─────────┴─────────┐
-                 │                   │
-                 ▼                   ▼
-          SMTP configuration    SMTP password
-             from Helm          from K8s Secret
-                 │                   ▲
-                 │                   │
-                 │            External Secrets
-                 │                   ▲
-                 │                   │
-                 │          AWS Secrets Manager
-                 │
-                 ▼
-             Brevo SMTP
-                 │
-                 ▼
-             Yahoo Mail
+                     GitHub
+                       │
+                       ▼
+                enterprise-platform
+                   -gitops
+                       │
+                       ▼
+                    Argo CD
+                       │
+                       ▼
+            monitoring-assets Helm
+                     Chart
+                       │
+         ┌─────────────┴─────────────┐
+         │                           │
+         ▼                           ▼
+  Alertmanager config          Email template
+         │                           │
+         │                     email.tmpl
+         │                           │
+         └─────────────┬─────────────┘
+                       │
+                       ▼
+                 Alertmanager
+                       │
+             ┌─────────┴─────────┐
+             │                   │
+             ▼                   ▼
+      SMTP configuration    SMTP password
+         from Helm          from K8s Secret
+             │                   ▲
+             │                   │
+             │            External Secrets
+             │                   ▲
+             │                   │
+             │          AWS Secrets Manager
+             │
+             ▼
+         Brevo SMTP
+             │
+             ▼
+         Yahoo Mail
 
 The key security boundary is:
 
@@ -1446,3 +1469,563 @@ AWS Secrets Manager → credentials
 External Secrets → Kubernetes secret
 Alertmanager → notification
 Brevo → SMTP delivery
+
+47. Updated Observability Validation — August 14, 2026
+
+The original Alertmanager implementation has now been extended and validated as part of the broader Kubernetes observability stack.
+
+The original design remains unchanged:
+
+AWS Secrets Manager
+        |
+        v
+External Secrets Operator
+        |
+        v
+alertmanager-secret
+        |
+        v
+Alertmanager
+        |
+        v
+Brevo SMTP
+        |
+        v
+Email recipient
+
+This remains the authoritative secret-management architecture. SMTP credentials are not being moved into Git.
+
+47.1 Prometheus / Kubernetes Metrics
+
+The cluster currently has three Ready worker nodes:
+
+ip-10-0-3-227.ec2.internal
+ip-10-0-4-225.ec2.internal
+ip-10-0-4-93.ec2.internal
+
+Kubelet and kube-state-metrics data are available.
+
+Validated metrics include:
+
+kube_pod_info
+kubelet_running_pods
+kube_node_status_allocatable{resource="pods"}
+
+The current pod counts observed were:
+
+ip-10-0-4-225.ec2.internal   17
+ip-10-0-4-93.ec2.internal    15
+ip-10-0-3-227.ec2.internal   17
+
+Each node currently reports a pod capacity/allocatable value of 17.
+
+An attempted query:
+
+kubelet_running_pods / kubelet_pod_worker_limit * 100
+
+returned no data because kubelet_pod_worker_limit is not available in the current metric set.
+
+This is not a Prometheus failure. The available kubelet and kube-state-metrics metrics were verified independently.
+
+47.2 Loki ServiceMonitor
+
+The Loki ServiceMonitor was validated successfully.
+
+Prometheus reported:
+
+8 / 8 up
+
+The targets included Loki and Loki canary endpoints.
+
+All observed targets were:
+
+up = 1
+
+This confirms that Prometheus is successfully scraping Loki metrics.
+
+The Loki monitoring path is therefore considered working.
+
+47.3 KubeSchedulerDown / KubeControllerManagerDown Investigation
+
+The cluster initially generated:
+
+KubeSchedulerDown
+KubeControllerManagerDown
+
+Queries such as:
+
+up{job=~".*scheduler.*"}
+
+and:
+
+count(up{job="kube-scheduler"})
+
+returned no scheduler target.
+
+The important EKS-specific point is that the Kubernetes scheduler and controller manager are AWS-managed control-plane components and are not exposed as ordinary worker-node workloads.
+
+The GitOps values file contains:
+
+defaultRules:
+  create: true
+  rules:
+    kubeControllerManager: false
+    kubeScheduler: false
+
+However, an existing generated PrometheusRule was still found containing:
+
+- alert: KubeSchedulerDown
+  expr: absent(up{job="kube-scheduler"} == 1)
+  for: 15m
+
+This demonstrated an important troubleshooting distinction: the Git values, Helm-rendered output, Argo CD desired state, and Kubernetes live state must all be checked independently.
+
+The chart version was verified as:
+
+kube-prometheus-stack 77.12.0
+
+The chart defaults were also inspected and showed separate scheduler-related controls:
+
+kubeSchedulerAlerting
+kubeSchedulerRecording
+
+The live rule eventually reconciled away and the alert resolved.
+
+Final verification:
+
+ALERTS{alertname=~"KubeSchedulerDown|KubeControllerManagerDown"}
+
+returned no data.
+
+The Prometheus stack Application was also verified:
+
+Synced Healthy
+
+Lesson
+
+When a default monitoring rule appears unexpectedly:
+
+Check the Git values.
+
+Check origin/main.
+
+Check the Argo CD Application.
+
+Render the Helm chart.
+
+Inspect the live PrometheusRule.
+
+Allow Argo CD reconciliation/pruning.
+
+Re-query Prometheus.
+
+Do not redesign the monitoring architecture simply because a generated rule takes time to reconcile.
+
+48. End-to-End Monitoring Test
+
+After the Alertmanager and Prometheus configuration was stable, a temporary synthetic alert was created to test the complete notification path.
+
+The temporary rule was:
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: monitoring-e2e-test
+  namespace: monitoring
+  labels:
+    release: prometheus-stack
+spec:
+  groups:
+    - name: monitoring-e2e-test
+      rules:
+        - alert: MonitoringE2ETest
+          expr: vector(1)
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Monitoring E2E test alert"
+            description: "This is a temporary end-to-end monitoring test."
+
+It was applied temporarily with:
+
+kubectl apply -f /tmp/monitoring-e2e-test.yaml
+
+Prometheus correctly evaluated the rule.
+
+The alert progressed from:
+
+pending
+
+to:
+
+firing
+
+The Prometheus query:
+
+ALERTS{alertname="MonitoringE2ETest"}
+
+confirmed the firing state.
+
+48.1 Firing Email
+
+The firing alert generated an actual email.
+
+The email contained:
+
+ALERT FIRING
+MonitoringE2ETest
+
+and included:
+
+Environment: development
+Cluster: devops-cluster
+Severity: WARNING
+
+The labels included:
+
+alertname     = MonitoringE2ETest
+cluster       = devops-cluster
+environment   = development
+prometheus    = monitoring/prometheus-stack-kube-prom-prometheus
+severity      = warning
+
+This proved:
+
+PrometheusRule
+    |
+    v
+Prometheus evaluation
+    |
+    v
+Alertmanager
+    |
+    v
+platform-email
+    |
+    v
+Brevo SMTP
+    |
+    v
+Yahoo Mail
+
+48.2 Alertmanager API Validation
+
+Alertmanager was also checked through its API:
+
+curl http://localhost:9093/api/v2/alerts
+
+The test alert appeared with:
+
+receiver = platform-email
+state    = active
+
+This independently confirmed that Alertmanager had received and routed the alert.
+
+48.3 Resolved Email
+
+After the firing test was confirmed, the temporary PrometheusRule was deleted:
+
+kubectl delete prometheusrule \
+  -n monitoring \
+  monitoring-e2e-test
+
+Prometheus then returned no data for:
+
+ALERTS{alertname="MonitoringE2ETest"}
+
+Alertmanager subsequently generated the resolved notification.
+
+The resolved email contained:
+
+ALERT RESOLVED
+MonitoringE2ETest
+
+with:
+
+Started:  2026-08-14 22:15:04 UTC
+Resolved: 2026-08-14 22:25:04 UTC
+
+This confirms that:
+
+send_resolved: true
+
+is working.
+
+49. Final E2E Result
+
+The complete monitoring notification pipeline has now been validated:
+
+Component
+
+Result
+
+PrometheusRule accepted
+
+PASS
+
+Prometheus evaluated rule
+
+PASS
+
+Pending → firing transition
+
+PASS
+
+Alertmanager received alert
+
+PASS
+
+Alert routed to platform-email
+
+PASS
+
+SMTP authentication
+
+PASS
+
+Brevo SMTP delivery
+
+PASS
+
+Firing email received
+
+PASS
+
+Test rule deleted
+
+PASS
+
+Alert cleared from Prometheus
+
+PASS
+
+Resolved notification generated
+
+PASS
+
+Resolved email received
+
+PASS
+
+The observability notification pipeline is therefore considered validated end-to-end.
+
+50. Node Deletion Testing Decision
+
+A worker-node deletion test was considered.
+
+The concern was that an EKS managed node group could replace a deleted worker before a long-duration alert threshold was reached.
+
+That concern is valid.
+
+However, a node deletion is not required to prove that the notification pipeline works. The synthetic MonitoringE2ETest already exercised the entire path from Prometheus through Alertmanager, SMTP, email delivery, and resolution.
+
+Therefore:
+
+Do not change production alert thresholds simply to make manual node-deletion testing easier.
+
+If node resilience needs to be tested later, it should be treated as a separate infrastructure-resilience test rather than as the primary Alertmanager validation.
+
+51. Current Observability State
+
+The current validated architecture is:
+
+Kubernetes
+    |
+    +--> kubelet metrics
+    +--> kube-state-metrics
+    +--> node-exporter
+    +--> Loki metrics
+    |
+    v
+Prometheus
+    |
+    +--> Grafana
+    |
+    +--> Alert rules
+    |
+    v
+Alertmanager
+    |
+    v
+platform-email
+    |
+    v
+Brevo SMTP
+    |
+    v
+Yahoo Mail
+
+Logs:
+
+Kubernetes workloads
+        |
+        v
+Promtail
+        |
+        v
+Loki
+        |
+        v
+Grafana
+
+Secrets:
+
+AWS Secrets Manager
+        |
+        v
+External Secrets Operator
+        |
+        v
+alertmanager-secret
+        |
+        v
+Alertmanager
+
+Argo CD:
+
+prometheus-stack = Synced / Healthy
+
+Loki monitoring:
+
+ServiceMonitor = 8 / 8 up
+
+The observability stack is considered complete for the current project phase.
+
+52. Key Lessons From the Complete Implementation
+
+52.1 Helm rendering is part of troubleshooting
+
+A value can be correct in Git while the generated Kubernetes resource still contains an unexpected rule.
+
+Always compare:
+
+Git values
+    |
+    v
+Helm rendered YAML
+    |
+    v
+Argo CD desired state
+    |
+    v
+Kubernetes live resource
+    |
+    v
+Prometheus behavior
+
+52.2 Chart defaults can contain multiple related rule groups
+
+For kube-prometheus-stack, scheduler-related rules are not necessarily controlled by one setting alone.
+
+Inspect the chart version in use:
+
+helm show values prometheus-community/kube-prometheus-stack \
+  --version 77.12.0
+
+52.3 Missing metrics do not automatically indicate failure
+
+If a query returns no data, first determine whether the metric exists.
+
+For example:
+
+kubelet_pod_worker_limit
+
+was not available, while:
+
+kubelet_running_pods
+kube_node_status_allocatable{resource="pods"}
+
+were available.
+
+52.4 Alert firing and notification delivery are different layers
+
+The following must be validated separately:
+
+Rule evaluation
+      |
+      v
+Alert firing
+      |
+      v
+Alertmanager receipt
+      |
+      v
+Route selection
+      |
+      v
+SMTP notification
+      |
+      v
+Email delivery
+
+The E2E test proved every layer.
+
+52.5 Firing and resolved notifications both matter
+
+The final test proved both:
+
+ALERT FIRING
+
+and:
+
+ALERT RESOLVED
+
+This is especially important because the platform uses:
+
+send_resolved: true
+
+52.6 Temporary tests should be removed
+
+The E2E PrometheusRule was intentionally created outside Git for controlled testing.
+
+After validation:
+
+kubectl delete prometheusrule \
+  -n monitoring \
+  monitoring-e2e-test
+
+The rule was confirmed absent from Prometheus afterward.
+
+52.7 Do not redesign a working architecture
+
+The final observability architecture is now proven.
+
+Future work should build on:
+
+Prometheus
+Alertmanager
+Grafana
+Loki
+Promtail
+Argo CD
+External Secrets
+AWS Secrets Manager
+
+rather than replacing working components without a concrete requirement.
+
+53. Final Status
+
+Observability & Alerting: VALIDATED
+
+Prometheus                         ✓
+Kubernetes metrics                 ✓
+Kubelet metrics                    ✓
+kube-state-metrics                 ✓
+Loki ServiceMonitor                ✓ 8/8 up
+Grafana                            ✓
+Alert rules                        ✓
+Alertmanager                       ✓
+Alert routing                      ✓
+SMTP authentication                ✓
+Brevo SMTP delivery                ✓
+Firing email                       ✓
+Resolved email                     ✓
+Argo CD                            ✓ Synced / Healthy
+External Secrets                   ✓
+AWS Secrets Manager                ✓
+Synthetic E2E test                 ✓
+
+The monitoring and alerting capability should now be treated as a completed platform capability.
+
+The next project work should move forward to the next unfinished platform capability rather than continuing to redesign or retest the observability architecture.

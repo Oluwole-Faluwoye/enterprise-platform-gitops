@@ -24,17 +24,29 @@ application:
 # APPLICATION SECRETS
 # =========================================================
 secrets:
-  authService:
-    kubernetesSecret: auth-service-secret
+  application:
+    kubernetesSecret: auth-service-app-secret
+
+  database:
+    kubernetesSecret: auth-service-database-secret
+
 env:
   - name: JWT_SECRET
+    secretName: auth-service-app-secret
     secretKey: jwt-secret
+
   - name: SPRING_DATASOURCE_USERNAME
+    secretName: auth-service-database-secret
     secretKey: database-username
+
   - name: SPRING_DATASOURCE_PASSWORD
+    secretName: auth-service-database-secret
     secretKey: database-password
+
   - name: SPRING_DATASOURCE_URL
+    secretName: auth-service-database-secret
     secretKey: database-url
+    
 nameOverride: ""
 fullnameOverride: ""
 serviceAccount:

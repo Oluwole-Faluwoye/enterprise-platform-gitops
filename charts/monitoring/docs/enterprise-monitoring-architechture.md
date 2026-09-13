@@ -23,3 +23,29 @@ Spring Boot App
                   Tempo
                      ↓
                  Grafana
+
+
+
+
+
+
+                         ┌─────────────────────┐
+                         │       Grafana       │
+                         │  dashboards/explore │
+                         └──────────┬──────────┘
+                                    │
+                         ┌──────────▼──────────┐
+                         │      Prometheus     │
+                         │  metrics + rules    │
+                         └───────┬───────┬─────┘
+                                 │       │
+                   ┌─────────────┘       └──────────────┐
+                   ▼                                    ▼
+             Alertmanager                            Loki
+             alerts/routing                         log storage
+                   ▲                                    ▲
+                   │                                    │
+             PrometheusRules                         Promtail
+                                                        │
+                                                        ▼
+                                                  Kubernetes logs

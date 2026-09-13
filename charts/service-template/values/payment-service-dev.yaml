@@ -1,0 +1,30 @@
+global:
+  project: enterprise-platform
+  environment: dev
+
+service:
+  name: payment-service
+  team: payments
+  runtime: spring-boot
+
+image:
+  repository: example/payment-service
+  tag: "1.0.0"
+
+secrets:
+  enabled: true
+
+  external:
+    enabled: true
+    refreshInterval: 1h
+
+    secretStore:
+      name: aws-secretsmanager
+
+    data:
+      - secretKey: jwt-secret
+        property: jwt-secret
+
+env:
+  - name: JWT_SECRET
+    secretKey: jwt-secret

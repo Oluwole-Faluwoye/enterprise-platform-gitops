@@ -78,6 +78,20 @@ spec:
                   key: {{ .secretKey }}
             {{- end }}
 
+            {{- if .Values.database.enabled }}
+            - name: DB_HOST
+              value: {{ .Values.database.host | quote }}
+
+            - name: DB_PORT
+              value: {{ .Values.database.port | quote }}
+
+            - name: DB_NAME
+              value: {{ .Values.database.name | quote }}
+
+            - name: DB_CREDENTIAL_REFERENCE
+              value: {{ .Values.database.credentialReference | quote }}
+            {{- end }}
+
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}

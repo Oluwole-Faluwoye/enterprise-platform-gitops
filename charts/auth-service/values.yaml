@@ -26,23 +26,19 @@ application:
 secrets:
   application:
     kubernetesSecret: auth-service-app-secret
-
 env:
   - name: JWT_SECRET
     secretName: auth-service-app-secret
     secretKey: jwt-secret
-
 # =========================================================
 # DATABASE
 # =========================================================
-
 database:
   enabled: false
   host: ""
   port: 5432
   name: ""
   credentialReference: ""
-  
 nameOverride: ""
 fullnameOverride: ""
 serviceAccount:
@@ -67,7 +63,7 @@ ingress:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018849945:certificate/2c6a4e8c-6a1c-4c73-9705-f93d31019c4c
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018849945:certificate/338c9fc3-b625-484b-a3a3-af14627964d1
   hosts:
     - host: api.dev.dreammyles.online
       paths:

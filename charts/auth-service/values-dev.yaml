@@ -16,3 +16,9 @@ serviceAccount:
   create: true
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::761018849945:role/enterprise-platform-dev-auth-service-database
+database:
+  enabled: true
+  host: enterprise-platform-dev-authdb.c5wqkyiq8ame.us-east-1.rds.amazonaws.com
+  port: 5432
+  name: authdb
+  credentialReference: arn:aws:secretsmanager:us-east-1:761018849945:secret:rds!db-6097f488-c584-4df5-890e-9a209e1a87b3-bb7HSo

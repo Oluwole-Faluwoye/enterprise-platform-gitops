@@ -80,14 +80,25 @@ resources:
     memory: "512Mi"
 health:
   path: /actuator/health
+
+startupProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  failureThreshold: 30
+  periodSeconds: 5
+  timeoutSeconds: 2
+
 livenessProbe:
   httpGet:
     path: /actuator/health/liveness
     port: http
+
 readinessProbe:
   httpGet:
     path: /actuator/health/readiness
     port: http
+    
 autoscaling:
   enabled: true
   minReplicas: 2

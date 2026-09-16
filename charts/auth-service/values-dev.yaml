@@ -21,4 +21,4 @@ database:
   host: enterprise-platform-dev-authdb.c5wqkyiq8ame.us-east-1.rds.amazonaws.com
   port: 5432
   name: authdb
-  credentialReference: arn:aws:secretsmanager:us-east-1:761018849945:secret:rds!db-6097f488-c584-4df5-890e-9a209e1a87b3-bb7HSo
+  credentialReference: arn:aws:secretsmanager:us-east-1:761018849945:secret:rds!db-ec3087dd-5056-4742-ac59-f145685ca79a-aS2KvK

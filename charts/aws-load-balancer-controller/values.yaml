@@ -12,3 +12,4 @@ serviceMonitor:
   enabled: true
 podDisruptionBudget:
   maxUnavailable: 1
+vpcId: vpc-0fcffdfde6eeb1bc1

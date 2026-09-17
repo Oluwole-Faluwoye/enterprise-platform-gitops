@@ -3,25 +3,30 @@
 image:
   repository: 761018849945.dkr.ecr.us-east-1.amazonaws.com/auth-service
   tag: 13
+
 replicaCount: 2
+
 service:
   type: ClusterIP
   port: 8080
+
 autoscaling:
   enabled: true
   minReplicas: 2
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
+
 serviceAccount:
   create: true
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::761018849945:role/enterprise-platform-dev-auth-service-database
+
 database:
   enabled: true
   host: enterprise-platform-dev-authdb.c5wqkyiq8ame.us-east-1.rds.amazonaws.com
   port: 5432
   name: authdb
-  credentialReference: arn:aws:secretsmanager:us-east-1:761018849945:secret:rds!db-6097f488-c584-4df5-890e-9a209e1a87b3-bb7HSo
+  credentialReference: arn:aws:secretsmanager:us-east-1:761018849945:secret:rds!db-ec3087dd-5056-4742-ac59-f145685ca79a-aS2KvK
 
 securityGroupPolicy:
   enabled: false

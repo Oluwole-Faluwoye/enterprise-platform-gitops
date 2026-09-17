@@ -17,7 +17,7 @@ grafana:
       alb.ingress.kubernetes.io/target-type: ip
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
       alb.ingress.kubernetes.io/ssl-redirect: "443"
-      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018849945:certificate/338c9fc3-b625-484b-a3a3-af14627964d1
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:761018849945:certificate/a6bd3e48-ac53-4feb-b442-3204e2605455
     hosts:
       - grafana.dev.dreammyles.online
     path: /

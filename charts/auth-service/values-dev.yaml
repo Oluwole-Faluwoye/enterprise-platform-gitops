@@ -22,3 +22,7 @@ database:
   port: 5432
   name: authdb
   credentialReference: arn:aws:secretsmanager:us-east-1:761018849945:secret:rds!db-6097f488-c584-4df5-890e-9a209e1a87b3-bb7HSo
+
+securityGroupPolicy:
+  enabled: false
+  groupId: ""

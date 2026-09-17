@@ -1,0 +1,16 @@
+{{- if and .Values.securityGroupPolicy.enabled .Values.securityGroupPolicy.groupId }}
+apiVersion: vpcresources.k8s.aws/v1beta1
+kind: SecurityGroupPolicy
+metadata:
+  name: {{ include "auth-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "auth-service.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "auth-service.selectorLabels" . | nindent 6 }}
+  securityGroups:
+    groupIds:
+      - {{ .Values.securityGroupPolicy.groupId | quote }}
+{{- end }}

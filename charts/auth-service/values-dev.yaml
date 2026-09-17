@@ -23,5 +23,5 @@ database:
   name: authdb
   credentialReference: arn:aws:secretsmanager:us-east-1:761018849945:secret:rds!db-ec3087dd-5056-4742-ac59-f145685ca79a-aS2KvK
 securityGroupPolicy:
-  enabled: false
-  groupId: ""
+  enabled: true
+  groupId: "sg-092eb850b231b34be"

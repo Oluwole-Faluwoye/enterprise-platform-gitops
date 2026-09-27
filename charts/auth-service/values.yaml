@@ -39,6 +39,41 @@ database:
   port: 5432
   name: ""
   credentialReference: ""
+
+# =========================================================
+# APPLICATION SECURITY GROUP
+# =========================================================
+securityGroupPolicy:
+  enabled: false
+  groupId: ""
+
+# =========================================================
+# DATABASE MIGRATION
+# =========================================================
+migration:
+  enabled: false
+  engine: flyway
+
+  artifact:
+    bucket: ""
+    key: ""
+
+  image:
+    repository: flyway/flyway
+    tag: "10.10.0"
+
+  serviceAccount:
+    name: ""
+    roleArn: ""
+
+  securityGroupPolicy:
+    enabled: false
+    groupId: ""
+
+  databaseSecret:
+    name: ""
+    secretStore: aws-secretsmanager
+
 nameOverride: ""
 fullnameOverride: ""
 serviceAccount:

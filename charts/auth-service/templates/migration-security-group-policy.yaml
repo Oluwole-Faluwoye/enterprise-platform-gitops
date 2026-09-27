@@ -1,0 +1,22 @@
+{{- if and .Values.migration.enabled .Values.migration.securityGroupPolicy.enabled .Values.migration.securityGroupPolicy.groupId }}
+apiVersion: vpcresources.k8s.aws/v1beta1
+kind: SecurityGroupPolicy
+metadata:
+  name: {{ include "auth-service.fullname" . }}-migration
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "auth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "auth-service.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: migration
+  securityGroups:
+    groupIds:
+      - {{ .Values.migration.securityGroupPolicy.groupId | quote }}
+{{- end }}

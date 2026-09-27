@@ -1,0 +1,92 @@
+{{- if and .Values.migration.enabled (eq .Values.migration.engine "flyway") }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "auth-service.fullname" . }}-migration
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "auth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/sync-wave: "10"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 300
+
+  template:
+    metadata:
+      labels:
+        {{- include "auth-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migration
+
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ .Values.migration.serviceAccount.name }}
+
+      initContainers:
+        - name: download-migrations
+          image: amazon/aws-cli:2
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+
+              mkdir -p /migration/db/migration
+
+              aws s3 sync \
+                "s3://{{ .Values.migration.artifact.bucket }}/{{ .Values.migration.artifact.key }}/" \
+                /migration/db/migration/ \
+                --exclude "*" \
+                --include "*.sql"
+
+              echo "Downloaded migrations:"
+              find /migration/db/migration -type f -print
+
+          volumeMounts:
+            - name: migration
+              mountPath: /migration
+
+      containers:
+        - name: flyway
+          image: "{{ .Values.migration.image.repository }}:{{ .Values.migration.image.tag }}"
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+
+              DB_USERNAME="$(cat /var/run/migration-db/username)"
+              DB_PASSWORD="$(cat /var/run/migration-db/password)"
+
+              echo "Running Flyway migrations..."
+
+              flyway \
+                -url="jdbc:postgresql://{{ .Values.database.host }}:{{ .Values.database.port }}/{{ .Values.database.name }}" \
+                -user="${DB_USERNAME}" \
+                -password="${DB_PASSWORD}" \
+                -locations="filesystem:/migration/db/migration" \
+                migrate
+
+          volumeMounts:
+            - name: migration
+              mountPath: /migration
+
+            - name: migration-db
+              mountPath: /var/run/migration-db
+              readOnly: true
+
+      volumes:
+        - name: migration
+          emptyDir: {}
+
+        - name: migration-db
+          secret:
+            secretName: {{ .Values.migration.databaseSecret.name }}
+{{- end }}

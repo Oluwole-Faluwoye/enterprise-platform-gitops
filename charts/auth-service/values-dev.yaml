@@ -3,7 +3,7 @@
 
 image:
   repository: 761018849945.dkr.ecr.us-east-1.amazonaws.com/auth-service
-  tag: 13
+  tag: 19
 replicaCount: 2
 service:
   type: ClusterIP
@@ -17,6 +17,7 @@ serviceAccount:
   create: true
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::761018849945:role/enterprise-platform-dev-auth-service-database
+  name: auth-service
 database:
   enabled: true
   host: enterprise-platform-dev-authdb.c5wqkyiq8ame.us-east-1.rds.amazonaws.com
@@ -31,7 +32,7 @@ migration:
   engine: flyway
   artifact:
     bucket: "enterprise-platform-dev-artifacts"
-    key: ""
+    key: "auth-service/migrations/8552515414b62c7c9fd8f7f445b3bf60327478e9/db/migration"
   image:
     repository: flyway/flyway
     tag: "10.10.0"

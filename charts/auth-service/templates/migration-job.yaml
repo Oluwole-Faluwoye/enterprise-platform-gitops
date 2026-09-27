@@ -1,4 +1,6 @@
-{{- if and .Values.migration.enabled (eq .Values.migration.engine "flyway") }}
+
+{{- if and .Values.migration.enabled .Values.migration.artifact.key (eq .Values.migration.engine "flyway") }}
+
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -28,7 +30,7 @@ spec:
 
       initContainers:
         - name: download-migrations
-          image: amazon/aws-cli:2
+          image: amazon/aws-cli:2.37.4
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh

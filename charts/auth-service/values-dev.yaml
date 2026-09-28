@@ -3,7 +3,7 @@
 
 image:
   repository: 761018849945.dkr.ecr.us-east-1.amazonaws.com/auth-service
-  tag: 19
+  tag: 20
 replicaCount: 2
 service:
   type: ClusterIP
@@ -32,7 +32,7 @@ migration:
   engine: flyway
   artifact:
     bucket: "enterprise-platform-dev-artifacts"
-    key: "auth-service/migrations/8552515414b62c7c9fd8f7f445b3bf60327478e9/db/migration"
+    key: "auth-service/migrations/763637f13c74ff7ec45cdd6510094802f22fa0e6/db/migration"
   image:
     repository: flyway/flyway
     tag: "10.10.0"

@@ -1,0 +1,41 @@
+service-template:
+  global:
+    project: enterprise-platform
+    environment: dev
+  service:
+    name: orders-service
+    type: ClusterIP
+    port: 8080
+  image:
+    repository: ""
+    tag: ""
+  application:
+    port: 8080
+    profile: dev
+  replicaCount: 2
+  database:
+    enabled: false
+    engine: ""
+    host: ""
+    port: 0
+    name: ""
+    credentialReference: ""
+  securityGroupPolicy:
+    enabled: false
+    groupId: ""
+  migration:
+    enabled: false
+    engine: ""
+    artifact:
+      bucket: ""
+      key: ""
+    image:
+      repository: flyway/flyway
+      tag: "10.10.0"
+    serviceAccount:
+      name: ""
+      roleArn: ""
+    databaseSecret:
+      name: ""
+      secretStore: aws-secretsmanager
+      credentialReference: ""

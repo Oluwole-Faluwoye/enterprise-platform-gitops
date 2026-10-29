@@ -51,6 +51,27 @@ serviceAccount:
   name: ""
 
 # =========================================================
+# DATABASE
+# Platform-populated database connection contract
+# =========================================================
+
+database:
+  enabled: false
+  engine: ""
+  host: ""
+  port: 0
+  name: ""
+  credentialReference: ""
+
+# =========================================================
+# SECURITY GROUP FOR PODS
+# =========================================================
+
+securityGroupPolicy:
+  enabled: false
+  groupId: ""
+
+# =========================================================
 # POD
 # =========================================================
 
@@ -83,12 +104,12 @@ health:
 
 livenessProbe:
   httpGet:
-    path: /actuator/health/liveness
+    path: /health/live
     port: http
 
 readinessProbe:
   httpGet:
-    path: /actuator/health/readiness
+    path: /health/ready
     port: http
 
 # =========================================================
@@ -120,7 +141,7 @@ serviceMonitor:
   labels:
     release: prometheus-stack
   interval: 15s
-  path: /actuator/prometheus
+  path: /metrics
 
 # =========================================================
 # ENVIRONMENT
@@ -143,6 +164,31 @@ secrets:
       name: aws-secretsmanager
 
     data: []
+
+# =========================================================
+# DATABASE MIGRATION
+# =========================================================
+
+migration:
+  enabled: false
+  engine: ""
+
+  artifact:
+    bucket: ""
+    key: ""
+
+  image:
+    repository: flyway/flyway
+    tag: "10.10.0"
+
+  serviceAccount:
+    name: ""
+    roleArn: ""
+
+  databaseSecret:
+    name: ""
+    secretStore: aws-secretsmanager
+    credentialReference: ""
 
 # =========================================================
 # STORAGE
